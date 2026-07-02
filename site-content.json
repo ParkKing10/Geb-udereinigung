@@ -1,0 +1,71 @@
+{
+  "badge": "Kostenloses Festpreis-Angebot",
+  "h1Line1": "Gebäudereinigung",
+  "h1Line2": "deutschlandweit",
+  "socialProof": "Bereits über 1.500 Unternehmen vertrauen auf Deutsche Gebäudedienste.",
+  "subtitle": "Deutsche Gebäudedienste übernimmt Ihre Gebäudereinigung in ganz Deutschland – Büro-, Unterhalts-, Glas- und Industriereinigung, zuverlässig und zum Festpreis.",
+  "ctaPrimary": "Jetzt Angebot berechnen",
+  "ctaMicro": "Dauert nur 60 Sekunden.",
+  "riskReducers": [
+    "Kostenlos",
+    "Unverbindlich",
+    "Festpreis-Angebot"
+  ],
+  "google": {
+    "rating": "4,9",
+    "count": "124"
+  },
+  "stats": [
+    {
+      "value": "2.800+",
+      "label": "betreute Objekte"
+    },
+    {
+      "value": "500.000+",
+      "label": "gereinigte m²"
+    },
+    {
+      "value": "1.500+",
+      "label": "zufriedene Kunden"
+    },
+    {
+      "value": "Deutschlandweit",
+      "label": "im Einsatz"
+    }
+  ],
+  "logos": [
+    {
+      "name": "Mercedes-Benz"
+    },
+    {
+      "name": "EDEKA"
+    },
+    {
+      "name": "Sparkasse"
+    },
+    {
+      "name": "XXXLutz"
+    },
+    {
+      "name": "ENGEL & VÖLKERS"
+    }
+  ],
+  "trustbox": [
+    "Festpreisgarantie",
+    "Deutschlandweit im Einsatz",
+    "Persönlicher Objektleiter",
+    "Versichert bis 10 Mio. €"
+  ],
+  "person": {
+    "firstName": "A.",
+    "lastName": "Christian",
+    "position": "Ihr persönlicher Objektberater",
+    "phone": "+49 152 07306840",
+    "email": "info@deutschegebäudedienste.de",
+    "photo": "/images/ansprechpartner.jpg",
+    "available": true,
+    "statusLabel": "Heute erreichbar",
+    "responseTime": "Antwort meist in 30 Minuten",
+    "quote": "Ich begleite Sie persönlich – von der Anfrage bis zum fertigen Angebot."
+  }
+}

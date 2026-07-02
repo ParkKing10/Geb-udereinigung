@@ -1,0 +1,74 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+.next/
+out/
+build/
+dist/
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Vercel
+.vercel
+
+# Local settings (not project config)
+.claude/settings.local.json
+
+# User-specific skills (not part of the template)
+.claude/skills/customize/
+.claude/skills/release/
+
+# Local temp files
+temp/
+
+# ── Laufzeitdaten – NIEMALS committen (PII, Geheimnisse, Admin-Zustand) ──
+# Kundendaten (DSGVO)
+leads.json
+orders.json
+sessions.json
+contacts.json
+# Rechnungen & Finanzen
+invoices.json
+invoice-settings.json
+expenses.json
+# App-/Tracking-Einstellungen & Rechtstexte (zur Laufzeit im Admin gepflegt)
+app-settings.json
+legal-content.json
+# E-Mail-Postfächer – enthalten KLARTEXT-Passwörter!
+email-accounts.json
+email-messages.json
+email-signatures.json
+# Hochgeladene Dateien (Kundenfotos = PII, Team/Logo-Uploads)
+public/uploads/
+# Backups
+*.bak
+
+# Hinweis: site-content.json, blog-posts.json, blog-config.json werden bewusst
+# als Seed-Content committet (kein PII/Secret) – so ist die Live-Seite sofort befüllt.
