@@ -61,6 +61,8 @@ expenses.json
 # App-/Tracking-Einstellungen & Rechtstexte (zur Laufzeit im Admin gepflegt)
 app-settings.json
 legal-content.json
+# Admin-Profil – enthält Passwort-Hash, 2FA-Secret & Backup-Code-Hashes!
+admin-profile.json
 # E-Mail-Postfächer – enthalten KLARTEXT-Passwörter!
 email-accounts.json
 email-messages.json

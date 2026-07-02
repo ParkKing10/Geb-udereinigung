@@ -1,16 +1,20 @@
 import { PageHeader } from "@/components/admin/ui";
 import { ProfileForm } from "@/components/admin/ProfileForm";
+import { readSafeProfile } from "@/lib/admin/profile";
 
-export default function ProfilePage() {
+export const dynamic = "force-dynamic";
+
+export default async function ProfilePage() {
+  const profile = await readSafeProfile();
   return (
     <>
       <PageHeader
-        title="Profile"
+        title="Profil"
         subtitle="Persönliche Daten, Passwort und Sicherheitseinstellungen verwalten"
       />
 
       <div className="max-w-3xl">
-        <ProfileForm />
+        <ProfileForm initial={profile} />
       </div>
     </>
   );
