@@ -1,6 +1,6 @@
 // Datei-basierter Store für KI-generierte SEO-Blogartikel + Auto-Konfiguration.
 import { promises as fs } from "node:fs";
-import path from "node:path";
+import { dataPath, readSeededJson } from "@/lib/data-dir";
 
 export type BlogPost = {
   id: string;
@@ -46,13 +46,14 @@ const CONFIG = "blog-config.json";
 
 async function readJson<T>(file: string, fallback: T): Promise<T> {
   try {
-    return JSON.parse(await fs.readFile(path.join(process.cwd(), file), "utf8")) as T;
+    // Seed-Fallback: liest die im Repo mitgelieferte Kopie, falls die Disk noch leer ist.
+    return await readSeededJson<T>(file);
   } catch {
     return fallback;
   }
 }
 async function writeJson(file: string, data: unknown): Promise<void> {
-  await fs.writeFile(path.join(process.cwd(), file), JSON.stringify(data, null, 2), "utf8");
+  await fs.writeFile(dataPath(file), JSON.stringify(data, null, 2), "utf8");
 }
 
 export async function readPosts(): Promise<BlogPost[]> {

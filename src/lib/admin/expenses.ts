@@ -1,7 +1,7 @@
 // Betriebskosten-Store (expenses.json). Beträge in Cent. Monatliche Fixkosten +
 // einmalige Ausgaben. Typen + Kategorien + reiner Helfer liegen client-sicher in expense-types.ts.
 import { promises as fs } from "node:fs";
-import path from "node:path";
+import { dataPath } from "@/lib/data-dir";
 import { randomUUID } from "node:crypto";
 import type { Expense, ExpenseCategory, ExpenseCadence } from "./expense-types";
 
@@ -12,7 +12,7 @@ const FILE = "expenses.json";
 
 async function readJson<T>(): Promise<T[]> {
   try {
-    const raw = await fs.readFile(path.join(process.cwd(), FILE), "utf8");
+    const raw = await fs.readFile(dataPath(FILE), "utf8");
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
@@ -20,7 +20,7 @@ async function readJson<T>(): Promise<T[]> {
   }
 }
 async function writeJson(data: unknown): Promise<void> {
-  await fs.writeFile(path.join(process.cwd(), FILE), JSON.stringify(data, null, 2), "utf8");
+  await fs.writeFile(dataPath(FILE), JSON.stringify(data, null, 2), "utf8");
 }
 
 export async function readExpenses(): Promise<Expense[]> {

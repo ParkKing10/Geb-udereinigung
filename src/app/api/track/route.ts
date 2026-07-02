@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { promises as fs } from "node:fs";
-import path from "node:path";
+import { dataPath } from "@/lib/data-dir";
 import { deriveSource } from "@/lib/marketing/source";
 
 export const runtime = "nodejs";
 
-const FILE = path.join(process.cwd(), "sessions.json");
+const FILE = dataPath("sessions.json");
 const MAX_ROWS = 50000; // Ringpuffer gegen unbegrenztes Wachstum
 
 export type SessionRow = {

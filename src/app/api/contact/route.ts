@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { promises as fs } from "node:fs";
-import path from "node:path";
+import { dataPath } from "@/lib/data-dir";
 
-const FILE = path.join(process.cwd(), "contacts.json");
+const FILE = dataPath("contacts.json");
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);

@@ -67,6 +67,8 @@ email-messages.json
 email-signatures.json
 # Hochgeladene Dateien (Kundenfotos = PII, Team/Logo-Uploads)
 public/uploads/
+# Lokale DATA_DIR-Uploads (root-anchored, damit src/app/uploads/ NICHT betroffen ist)
+/uploads/
 # Backups
 *.bak
 

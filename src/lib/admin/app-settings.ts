@@ -2,7 +2,7 @@
 // Tracking-IDs + KI-Key können hier gesetzt werden und überschreiben die ENV-Defaults.
 // So muss der Betreiber nichts in .env-Dateien anfassen.
 import { promises as fs } from "node:fs";
-import path from "node:path";
+import { dataPath } from "@/lib/data-dir";
 
 export type TrackingSettings = {
   gaId: string; // G-XXXXXXX
@@ -48,7 +48,7 @@ function envDefaults(): AppSettings {
 
 async function readRaw(): Promise<Partial<AppSettings>> {
   try {
-    return JSON.parse(await fs.readFile(path.join(process.cwd(), FILE), "utf8")) as Partial<AppSettings>;
+    return JSON.parse(await fs.readFile(dataPath(FILE), "utf8")) as Partial<AppSettings>;
   } catch {
     return {};
   }
@@ -114,6 +114,6 @@ export async function saveAppSettings(patch: SavePatch): Promise<SafeAppSettings
       anthropicKey: patch.ai?.anthropicKey ? patch.ai.anthropicKey : cur.ai.anthropicKey,
     },
   };
-  await fs.writeFile(path.join(process.cwd(), FILE), JSON.stringify(next, null, 2), "utf8");
+  await fs.writeFile(dataPath(FILE), JSON.stringify(next, null, 2), "utf8");
   return { tracking: next.tracking, ai: { hasKey: Boolean(next.ai.anthropicKey), model: next.ai.model } };
 }

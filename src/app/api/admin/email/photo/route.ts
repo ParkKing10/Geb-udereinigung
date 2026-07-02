@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { promises as fs } from "node:fs";
 import { randomBytes } from "node:crypto";
 import path from "node:path";
+import { uploadPath } from "@/lib/data-dir";
 import { AUTH_COOKIE, verifySession } from "@/lib/admin/auth";
 
 export const runtime = "nodejs";
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
   if (!ext) return NextResponse.json({ error: "Nur PNG, WebP oder JPG erlaubt." }, { status: 400 });
   if (file.size > MAX_BYTES) return NextResponse.json({ error: "Datei zu groß (max. 3 MB)." }, { status: 400 });
 
-  const dir = path.join(process.cwd(), "public", "uploads", "email");
+  const dir = uploadPath("email");
   await fs.mkdir(dir, { recursive: true });
   const name = `sig-${Date.now()}-${randomBytes(4).toString("hex")}.${ext}`;
   await fs.writeFile(path.join(dir, name), Buffer.from(await file.arrayBuffer()));

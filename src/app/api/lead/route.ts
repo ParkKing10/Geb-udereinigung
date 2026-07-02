@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { dataPath, uploadPath } from "@/lib/data-dir";
 import { SERVICES } from "@/lib/sauberfit-data";
 import { estimateLead } from "@/lib/ai/estimate";
 import type { Lead } from "@/lib/admin/data";
 
-const FILE = path.join(process.cwd(), "leads.json");
+const FILE = dataPath("leads.json");
 const MAX_IMAGES = 8;
 const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
   const imagePaths: string[] = [];
   const aiImages: { data: string; mime: string }[] = [];
   if (files.length) {
-    const dir = path.join(process.cwd(), "public", "uploads", "leads", id);
+    const dir = uploadPath("leads", id);
     await fs.mkdir(dir, { recursive: true });
     let i = 0;
     for (const file of files) {

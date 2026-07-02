@@ -3,7 +3,7 @@
 // ans Frontend zurückgegeben (siehe redactAccount). Für Produktion: Datei schützen und
 // idealerweise App-spezifische Passwörter des Postfach-Anbieters verwenden.
 import { promises as fs } from "node:fs";
-import path from "node:path";
+import { dataPath } from "@/lib/data-dir";
 import { randomUUID } from "node:crypto";
 
 export type Signature = {
@@ -70,13 +70,13 @@ const MESSAGES = "email-messages.json";
 
 async function readJson<T>(file: string, fallback: T): Promise<T> {
   try {
-    return JSON.parse(await fs.readFile(path.join(process.cwd(), file), "utf8")) as T;
+    return JSON.parse(await fs.readFile(dataPath(file), "utf8")) as T;
   } catch {
     return fallback;
   }
 }
 async function writeJson(file: string, data: unknown): Promise<void> {
-  await fs.writeFile(path.join(process.cwd(), file), JSON.stringify(data, null, 2), "utf8");
+  await fs.writeFile(dataPath(file), JSON.stringify(data, null, 2), "utf8");
 }
 
 // ── Accounts ────────────────────────────────────────────────

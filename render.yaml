@@ -30,10 +30,15 @@ services:
         sync: false
       - key: NEXT_PUBLIC_GOOGLE_ADS_ID
         sync: false
+      # Persistente Datenablage – zeigt auf den Mount-Pfad der Disk (siehe unten).
+      # Hier liegen ALLE Betriebsdaten: JSON-Stores + Uploads.
+      - key: DATA_DIR
+        value: /var/data
 
-# ── HINWEIS PERSISTENZ ─────────────────────────────────────────────────────
-# Diese App speichert Leads, Aufträge, Rechnungen, Postfächer, Uploads und
-# Content in Dateien im Projektordner. Auf Render ist das Dateisystem OHNE
-# angehängte Disk FLÜCHTIG: bei jedem Deploy/Neustart gehen diese Daten verloren.
-# Für echten Betrieb: eine Render-Disk anhängen (kostet extra, nur auf bezahlten
-# Plänen) UND die App auf ein DATA_DIR umstellen (kann ich übernehmen).
+    # Persistente Disk: hält alle Betriebsdaten (Leads, Aufträge, Rechnungen,
+    # Postfächer, Content, Uploads) über Deploys und Neustarts hinweg.
+    # Nur auf bezahlten Plänen (Starter+). DATA_DIR (oben) zeigt auf mountPath.
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1

@@ -2,7 +2,7 @@
 // Datei-basiert (site-content.json am cwd), Fallback = DEFAULT_CONTENT.
 import { cache } from "react";
 import { promises as fs } from "node:fs";
-import path from "node:path";
+import { dataPath, readSeededJson } from "@/lib/data-dir";
 
 export type Stat = { value: string; label: string };
 export type Logo = { name: string; src?: string };
@@ -100,8 +100,8 @@ function merge(base: SiteContent, patch: Partial<SiteContent>): SiteContent {
 // all call this) to a single file read, important since (site) is force-dynamic.
 export const getSiteContent = cache(async (): Promise<SiteContent> => {
   try {
-    const raw = await fs.readFile(path.join(process.cwd(), FILE), "utf8");
-    return merge(DEFAULT_CONTENT, JSON.parse(raw) as Partial<SiteContent>);
+    // Seed-Fallback: liest die Repo-Kopie, falls die Disk (DATA_DIR) noch leer ist.
+    return merge(DEFAULT_CONTENT, await readSeededJson<Partial<SiteContent>>(FILE));
   } catch {
     return DEFAULT_CONTENT;
   }
@@ -109,6 +109,6 @@ export const getSiteContent = cache(async (): Promise<SiteContent> => {
 
 export async function saveSiteContent(patch: Partial<SiteContent>): Promise<SiteContent> {
   const next = merge(DEFAULT_CONTENT, patch);
-  await fs.writeFile(path.join(process.cwd(), FILE), JSON.stringify(next, null, 2), "utf8");
+  await fs.writeFile(dataPath(FILE), JSON.stringify(next, null, 2), "utf8");
   return next;
 }

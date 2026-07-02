@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { uploadPath } from "@/lib/data-dir";
 import { AUTH_COOKIE, verifySession } from "@/lib/admin/auth";
 
 export const runtime = "nodejs";
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
   if (!ext) return NextResponse.json({ error: "Nur JPG, PNG oder WebP erlaubt." }, { status: 400 });
   if (file.size > MAX_BYTES) return NextResponse.json({ error: "Datei zu groß (max. 6 MB)." }, { status: 400 });
 
-  const dir = path.join(process.cwd(), "public", "uploads", "team");
+  const dir = uploadPath("team");
   await fs.mkdir(dir, { recursive: true });
   const name = `ansprechpartner-${Date.now()}.${ext}`;
   const bytes = Buffer.from(await file.arrayBuffer());

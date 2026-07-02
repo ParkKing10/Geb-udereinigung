@@ -2,7 +2,7 @@
 // Einstellungen (invoice-settings.json). Beträge in Cent (netto). USt wird berechnet.
 // Typen + reine Helfer liegen client-sicher in invoice-utils.ts.
 import { promises as fs } from "node:fs";
-import path from "node:path";
+import { dataPath } from "@/lib/data-dir";
 import { randomUUID } from "node:crypto";
 import { BRAND, CONTACT } from "@/lib/sauberfit-data";
 import type { Invoice, InvoiceSettings } from "./invoice-utils";
@@ -33,13 +33,13 @@ export const DEFAULT_INVOICE_SETTINGS: InvoiceSettings = {
 
 async function readJson<T>(file: string, fallback: T): Promise<T> {
   try {
-    return JSON.parse(await fs.readFile(path.join(process.cwd(), file), "utf8")) as T;
+    return JSON.parse(await fs.readFile(dataPath(file), "utf8")) as T;
   } catch {
     return fallback;
   }
 }
 async function writeJson(file: string, data: unknown): Promise<void> {
-  await fs.writeFile(path.join(process.cwd(), file), JSON.stringify(data, null, 2), "utf8");
+  await fs.writeFile(dataPath(file), JSON.stringify(data, null, 2), "utf8");
 }
 
 // ── Einstellungen ───────────────────────────────────────────

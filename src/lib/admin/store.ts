@@ -1,11 +1,11 @@
 // Server-seitige Leser für die datei-basierten Stores (leads.json / contacts.json).
 import { promises as fs } from "node:fs";
-import path from "node:path";
+import { dataPath } from "@/lib/data-dir";
 import type { Lead, Message, Order } from "./data";
 
 async function readJson<T>(file: string): Promise<T[]> {
   try {
-    const raw = await fs.readFile(path.join(process.cwd(), file), "utf8");
+    const raw = await fs.readFile(dataPath(file), "utf8");
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
@@ -39,7 +39,7 @@ type NewOrder = Omit<Order, "id" | "createdAt" | "repeat" | "orderIndex">;
 
 // Buchung anlegen – dedupliziert den Kunden per E-Mail (→ repeat + orderIndex).
 export async function createOrder(input: NewOrder): Promise<Order> {
-  const p = path.join(process.cwd(), "orders.json");
+  const p = dataPath("orders.json");
   const orders = await readJson<Order>("orders.json");
   const email = input.customerEmail.trim().toLowerCase();
   const prior = orders.filter((o) => o.customerEmail.trim().toLowerCase() === email).length;
@@ -62,7 +62,7 @@ export async function getLead(id: string): Promise<Lead | null> {
 }
 
 export async function updateLead(id: string, patch: Partial<Lead>): Promise<Lead | null> {
-  const p = path.join(process.cwd(), "leads.json");
+  const p = dataPath("leads.json");
   let leads: Lead[] = [];
   try {
     leads = JSON.parse(await fs.readFile(p, "utf8"));

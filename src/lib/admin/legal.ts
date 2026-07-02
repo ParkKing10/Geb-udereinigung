@@ -3,7 +3,7 @@
 // gespeicherte Bearbeitung nichts fehlt. Bei Datenschutz wird der dynamische Tracking-
 // Abschnitt weiterhin serverseitig angehängt (siehe datenschutz/page.tsx).
 import { promises as fs } from "node:fs";
-import path from "node:path";
+import { dataPath } from "@/lib/data-dir";
 import { CONTACT } from "@/lib/sauberfit-data";
 import type { LegalContent } from "./legal-meta";
 
@@ -48,7 +48,7 @@ const FILE = "legal-content.json";
 export async function readLegal(): Promise<LegalContent> {
   const def = defaults();
   try {
-    const saved = JSON.parse(await fs.readFile(path.join(process.cwd(), FILE), "utf8")) as Partial<LegalContent>;
+    const saved = JSON.parse(await fs.readFile(dataPath(FILE), "utf8")) as Partial<LegalContent>;
     return {
       impressum: saved.impressum ?? def.impressum,
       datenschutz: saved.datenschutz ?? def.datenschutz,
@@ -61,7 +61,7 @@ export async function readLegal(): Promise<LegalContent> {
 
 export async function saveLegal(patch: Partial<LegalContent>): Promise<LegalContent> {
   const next = { ...(await readLegal()), ...patch };
-  await fs.writeFile(path.join(process.cwd(), FILE), JSON.stringify(next, null, 2), "utf8");
+  await fs.writeFile(dataPath(FILE), JSON.stringify(next, null, 2), "utf8");
   return next;
 }
 
