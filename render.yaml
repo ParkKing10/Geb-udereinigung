@@ -1,0 +1,39 @@
+# Render Blueprint für Deutsche Gebäudedienste (Next.js 16).
+# Nutzung: In Render → "New +" → "Blueprint" → dieses Repo wählen.
+# (Alternativ manuell als "Web Service" anlegen – dann diese Werte übernehmen.)
+services:
+  - type: web
+    name: deutsche-gebaeudedienste
+    runtime: node
+    region: frankfurt            # EU-Region (DSGVO/Latenz). Alternativen: oregon, frankfurt, singapore
+    plan: starter                # "free" möglich zum Testen (schläft nach Inaktivität ein). "starter" bleibt online.
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    autoDeploy: true             # Deploy bei jedem Push auf main
+    envVars:
+      # Öffentliche Basis-URL – wird beim Build in canonical/sitemap/OpenGraph eingebacken.
+      # WICHTIG: die Domain eintragen, unter der die Seite wirklich läuft (Custom Domain
+      # ODER die *.onrender.com-URL). Ohne diese Variable bricht der Build bewusst ab.
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false
+      # Admin-Login
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: AUTH_SECRET
+        generateValue: true      # Render erzeugt automatisch einen starken Zufallswert
+      # KI-Kostenschätzung / E-Mail-KI (optional – ohne Key läuft die Heuristik)
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # Conversion-Tracking (optional – kann auch im Admin gepflegt werden)
+      - key: NEXT_PUBLIC_GA_ID
+        sync: false
+      - key: NEXT_PUBLIC_GOOGLE_ADS_ID
+        sync: false
+
+# ── HINWEIS PERSISTENZ ─────────────────────────────────────────────────────
+# Diese App speichert Leads, Aufträge, Rechnungen, Postfächer, Uploads und
+# Content in Dateien im Projektordner. Auf Render ist das Dateisystem OHNE
+# angehängte Disk FLÜCHTIG: bei jedem Deploy/Neustart gehen diese Daten verloren.
+# Für echten Betrieb: eine Render-Disk anhängen (kostet extra, nur auf bezahlten
+# Plänen) UND die App auf ein DATA_DIR umstellen (kann ich übernehmen).
