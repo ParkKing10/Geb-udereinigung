@@ -10,7 +10,7 @@ function isActive(pathname: string, href: string): boolean {
   return href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
 }
 
-export function AdminShell({ children, user }: { children: React.ReactNode; user: { name: string; role: string; initials: string } }) {
+export function AdminShell({ children, user }: { children: React.ReactNode; user: { name: string; role: string; initials: string; avatar?: string } }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const current = ADMIN_NAV.find((n) => isActive(pathname, n.href));
@@ -96,7 +96,12 @@ export function AdminShell({ children, user }: { children: React.ReactNode; user
             <span className="absolute right-2 top-2 size-2 rounded-full bg-[#5d8a34] ring-2 ring-white" />
           </button>
           <div className="flex items-center gap-2.5">
-            <span className="grid size-9 place-items-center rounded-full bg-[#16241a] text-xs font-bold text-white">{user.initials}</span>
+            {user.avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={user.avatar} alt={user.name} className="size-9 rounded-full object-cover" />
+            ) : (
+              <span className="grid size-9 place-items-center rounded-full bg-[#16241a] text-xs font-bold text-white">{user.initials}</span>
+            )}
             <span className="hidden leading-tight sm:block">
               <span className="block text-sm font-semibold text-neutral-900">{user.name}</span>
               <span className="block text-xs text-neutral-500">{user.role}</span>

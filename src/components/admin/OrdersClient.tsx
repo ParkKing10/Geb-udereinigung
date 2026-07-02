@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Repeat, Check, Loader2, X } from "lucide-react";
+import { Plus, Repeat, Check, Loader2, X, Trash2 } from "lucide-react";
 import type { Order } from "@/lib/admin/data";
 import { StatusBadge, table } from "./ui";
 import { formatEUR, formatDate, initials } from "@/lib/admin/format";
@@ -69,6 +69,20 @@ function NewOrder({ onDone }: { onDone: () => void }) {
 
 export function OrdersClient({ orders }: { orders: Order[] }) {
   const router = useRouter();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function del(o: Order) {
+    if (!window.confirm(`Auftrag von ${o.customerName} (${formatEUR(o.amountCents)}) wirklich löschen? Das kann nicht rückgängig gemacht werden.`)) return;
+    setDeletingId(o.id);
+    try {
+      const res = await fetch("/api/admin/order", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: o.id }) });
+      if (res.ok) router.refresh();
+      else alert((await res.json().catch(() => ({}))).error || "Löschen fehlgeschlagen.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return (
     <section className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-neutral-100 px-5 py-3.5">
@@ -89,6 +103,7 @@ export function OrdersClient({ orders }: { orders: Order[] }) {
                 <th className={table.th}>Betrag</th>
                 <th className={table.th}>Datum</th>
                 <th className={table.th}>Status</th>
+                <th className={`${table.th} text-right`}>Aktion</th>
               </tr>
             </thead>
             <tbody>
@@ -113,6 +128,11 @@ export function OrdersClient({ orders }: { orders: Order[] }) {
                   <td className={`${table.td} font-semibold tabular-nums`}>{formatEUR(o.amountCents)}</td>
                   <td className={table.td}>{formatDate(o.createdAt)}</td>
                   <td className={table.td}><StatusBadge status={o.status} /></td>
+                  <td className={`${table.td} text-right`}>
+                    <button onClick={() => del(o)} disabled={deletingId === o.id} title="Auftrag löschen" className="text-neutral-300 transition-colors hover:text-rose-600 disabled:opacity-50">
+                      {deletingId === o.id ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

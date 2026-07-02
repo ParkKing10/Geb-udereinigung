@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { AUTH_COOKIE, verifySession } from "@/lib/admin/auth";
-import { createOrder, getLead, updateLead, readOrders } from "@/lib/admin/store";
+import { createOrder, getLead, updateLead, readOrders, deleteOrder } from "@/lib/admin/store";
 import { deriveSource } from "@/lib/marketing/source";
 
 export const runtime = "nodejs";
@@ -70,4 +70,15 @@ export async function POST(req: Request) {
   if (leadId) await updateLead(leadId, { status: "Gewonnen" });
 
   return NextResponse.json({ ok: true, order });
+}
+
+export async function DELETE(req: Request) {
+  if (!(await requireAdmin())) return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
+  const body = await req.json().catch(() => null);
+  const id = body?.id ? String(body.id) : "";
+  if (!id) return NextResponse.json({ error: "id fehlt" }, { status: 400 });
+
+  const ok = await deleteOrder(id);
+  if (!ok) return NextResponse.json({ error: "Auftrag nicht gefunden" }, { status: 404 });
+  return NextResponse.json({ ok: true });
 }

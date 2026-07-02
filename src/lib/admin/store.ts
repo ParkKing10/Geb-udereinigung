@@ -1,6 +1,6 @@
 // Server-seitige Leser für die datei-basierten Stores (leads.json / contacts.json).
 import { promises as fs } from "node:fs";
-import { dataPath } from "@/lib/data-dir";
+import { dataPath, uploadPath } from "@/lib/data-dir";
 import type { Lead, Message, Order } from "./data";
 
 async function readJson<T>(file: string): Promise<T[]> {
@@ -74,4 +74,27 @@ export async function updateLead(id: string, patch: Partial<Lead>): Promise<Lead
   leads[idx] = { ...leads[idx], ...patch };
   await fs.writeFile(p, JSON.stringify(leads, null, 2), "utf8");
   return leads[idx];
+}
+
+// Lead löschen (inkl. hochgeladener Kundenfotos → DSGVO-Hygiene). true, wenn entfernt.
+export async function deleteLead(id: string): Promise<boolean> {
+  const p = dataPath("leads.json");
+  let leads: Lead[] = [];
+  try { leads = JSON.parse(await fs.readFile(p, "utf8")); } catch { return false; }
+  const next = leads.filter((l) => l.id !== id);
+  if (next.length === leads.length) return false;
+  await fs.writeFile(p, JSON.stringify(next, null, 2), "utf8");
+  await fs.rm(uploadPath("leads", id), { recursive: true, force: true }).catch(() => {});
+  return true;
+}
+
+// Auftrag löschen. true, wenn entfernt.
+export async function deleteOrder(id: string): Promise<boolean> {
+  const p = dataPath("orders.json");
+  let orders: Order[] = [];
+  try { orders = JSON.parse(await fs.readFile(p, "utf8")); } catch { return false; }
+  const next = orders.filter((o) => o.id !== id);
+  if (next.length === orders.length) return false;
+  await fs.writeFile(p, JSON.stringify(next, null, 2), "utf8");
+  return true;
 }

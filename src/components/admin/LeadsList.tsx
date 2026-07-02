@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search, Mail, Phone, Camera } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, Mail, Phone, Camera, Trash2, Loader2 } from "lucide-react";
 import type { Lead, LeadStatus } from "@/lib/admin/data";
 import { deriveSource } from "@/lib/marketing/source";
 import { getService } from "@/lib/sauberfit-data";
@@ -15,6 +16,20 @@ export function LeadsList({ leads }: { leads: Lead[] }) {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("Alle");
   const now = Date.now();
+  const router = useRouter();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function del(l: Lead) {
+    if (!window.confirm(`Lead von ${l.name} wirklich löschen? Zugehörige Fotos werden mitgelöscht. Das kann nicht rückgängig gemacht werden.`)) return;
+    setDeletingId(l.id);
+    try {
+      const res = await fetch("/api/admin/lead", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: l.id }) });
+      if (res.ok) router.refresh();
+      else alert((await res.json().catch(() => ({}))).error || "Löschen fehlgeschlagen.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   const rows = useMemo(() => {
     const query = q.trim().toLowerCase();
@@ -66,6 +81,7 @@ export function LeadsList({ leads }: { leads: Lead[] }) {
               <th className={table.th}>Quelle</th>
               <th className={table.th}>Kontakt</th>
               <th className={table.th}>Status</th>
+              <th className={`${table.th} text-right`}>Aktion</th>
             </tr>
           </thead>
           <tbody>
@@ -96,10 +112,15 @@ export function LeadsList({ leads }: { leads: Lead[] }) {
                   </div>
                 </td>
                 <td className={table.td}><StatusBadge status={status} /></td>
+                <td className={`${table.td} text-right`}>
+                  <button onClick={() => del(l)} disabled={deletingId === l.id} title="Lead löschen" className="text-neutral-300 transition-colors hover:text-rose-600 disabled:opacity-50">
+                    {deletingId === l.id ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+                  </button>
+                </td>
               </tr>
             ))}
             {rows.length === 0 && (
-              <tr><td colSpan={7} className="px-5 py-10 text-center text-sm text-neutral-400">Keine Leads gefunden.</td></tr>
+              <tr><td colSpan={8} className="px-5 py-10 text-center text-sm text-neutral-400">Keine Leads gefunden.</td></tr>
             )}
           </tbody>
         </table>
