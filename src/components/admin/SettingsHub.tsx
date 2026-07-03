@@ -145,13 +145,13 @@ export function SettingsHub({ initial }: { initial: SafeAppSettings }) {
         <Card icon={BellRing} title="Lead-Benachrichtigung (Pushover)" hint="Bei jedem neuen Lead geht eine Mail an deine Pushover-Adresse – kommt als Push aufs Handy an.">
           <div className="space-y-3">
             <label className="block">
-              <span className={lbl}>Pushover-E-Mail-Adresse {notifyEmail && <span className="text-[#5d8a34]">· aktiv</span>}</span>
-              <input type="email" className={field} value={notifyEmail} onChange={(e) => setNotifyEmail(e.target.value)} placeholder="xxxxxxxxxx@pomail.net" />
+              <span className={lbl}>Pushover-E-Mail-Adresse(n) {notifyEmail && <span className="text-[#5d8a34]">· aktiv</span>}</span>
+              <input type="email" multiple className={field} value={notifyEmail} onChange={(e) => setNotifyEmail(e.target.value)} placeholder="xxxxxxxxxx@pomail.net, yyyyyyyyyy@pomail.net" />
             </label>
             <p className="text-xs text-neutral-400">
-              Die Adresse findest du in der Pushover-App unter deinem Gerät („E-Mail-Alias“). Inhalt des Push:
-              „New Lead Alert – Customer, Number, Company“. Versand läuft über dein Standard-Postfach (Menü E-Mails) –
-              das muss eingerichtet sein. Feld leeren = Benachrichtigung aus.
+              Mehrere Empfänger mit Komma trennen – jeder bekommt den Push. Die Adresse findet jeder Nutzer in seiner
+              Pushover-App („E-Mail-Alias“). Inhalt: „New Lead Alert – Customer, Number, Company“. Versand läuft über
+              dein Standard-Postfach (Menü E-Mails). Feld leeren = Benachrichtigung aus.
             </p>
             <div className="flex justify-end">
               <button onClick={savePushover} disabled={poSaving} className="inline-flex items-center gap-2 rounded-lg bg-[#16241a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0f1c14] disabled:opacity-60">

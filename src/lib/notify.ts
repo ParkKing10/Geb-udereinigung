@@ -8,8 +8,12 @@ import { sendMail } from "@/lib/email/send";
 
 export async function sendLeadAlert(input: { name: string; phone: string }): Promise<void> {
   try {
-    const to = await leadNotifyEmail();
-    if (!to || !/\S+@\S+\.\S+/.test(to)) return; // nicht konfiguriert → still überspringen
+    // Mehrere Empfänger möglich (Komma-getrennt im Settings-Feld) – ein Versand an alle.
+    const recipients = (await leadNotifyEmail())
+      .split(/[,;]/)
+      .map((s) => s.trim())
+      .filter((s) => /\S+@\S+\.\S+/.test(s));
+    if (recipients.length === 0) return; // nicht konfiguriert → still überspringen
 
     const accounts = await readAccounts();
     const acc = accounts.find((a) => a.isDefault) ?? accounts[0];
@@ -20,7 +24,7 @@ export async function sendLeadAlert(input: { name: string; phone: string }): Pro
 
     // Pushover nutzt den Text-Teil; buildBody in sendMail wandelt <br> in Zeilenumbrüche.
     await sendMail(acc, {
-      to,
+      to: recipients.join(", "),
       subject: "New Lead Alert",
       html: `Customer: ${input.name}<br>Number: ${input.phone}<br>Company: Deutsche Gebäudedienste`,
     });
