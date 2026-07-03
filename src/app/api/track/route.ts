@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { promises as fs } from "node:fs";
 import { dataPath } from "@/lib/data-dir";
 import { deriveSource } from "@/lib/marketing/source";
+import { lookupCompany } from "@/lib/company-lookup";
 
 export const runtime = "nodejs";
 
@@ -20,6 +21,7 @@ export type SessionRow = {
   campaign?: string; // utm_campaign
   medium?: string;
   gclid?: string;
+  company?: string; // Firmen-Erkennung (RDAP/PTR) – nur der Name, nie die IP
 };
 
 function s(v: unknown, max = 200): string | undefined {
@@ -74,6 +76,22 @@ export async function POST(req: Request) {
     await fs.writeFile(FILE, JSON.stringify(rows), "utf8");
   } catch {
     // Tracking darf nie den Nutzer stören
+  }
+
+  // Firmen-Erkennung asynchron: Firmenname (nie die IP) an der Session nachtragen.
+  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim();
+  if (ip && row.sid) {
+    const sid = row.sid;
+    void lookupCompany(ip)
+      .then(async (company) => {
+        if (!company) return;
+        const rows = JSON.parse(await fs.readFile(FILE, "utf8")) as SessionRow[];
+        const idx = rows.findIndex((r) => r.sid === sid);
+        if (idx === -1 || rows[idx].company) return;
+        rows[idx] = { ...rows[idx], company };
+        await fs.writeFile(FILE, JSON.stringify(rows), "utf8");
+      })
+      .catch(() => {});
   }
 
   return NextResponse.json({ ok: true });

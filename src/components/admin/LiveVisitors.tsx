@@ -4,7 +4,7 @@
 // Zeigt wer online ist, wer das Angebots-Formular offen hat (inkl. Schritt) und
 // ob bereits Kontaktdaten eingetippt wurden.
 import { useEffect, useState } from "react";
-import { Radio, FileText, Phone, Smartphone, Monitor } from "lucide-react";
+import { Radio, FileText, Phone, Smartphone, Monitor, Building2 } from "lucide-react";
 
 type Visitor = {
   sid: string;
@@ -17,6 +17,7 @@ type Visitor = {
   ip?: string;
   country?: string;
   device?: "mobile" | "desktop";
+  company?: string;
 };
 
 function fmtDuration(s: number): string {
@@ -77,6 +78,11 @@ export function LiveVisitors() {
               {v.label && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-neutral-600" title="Herkunft">
                   {v.emoji} {v.label}{v.keyword ? <span className="font-normal text-neutral-400">· „{v.keyword}“</span> : null}
+                </span>
+              )}
+              {v.company && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#eef3e7] px-2 py-0.5 text-[11px] font-bold text-[#4a7029]" title="Erkanntes Unternehmen (IP-Bereich)">
+                  <Building2 size={11} /> {v.company}
                 </span>
               )}
               {v.device && (

@@ -3,7 +3,7 @@
 // Besucher-Journeys: pro Session jeder Schritt (Seiten, Formular-Schritte,
 // Kontakt eingegeben, abgeschickt) + Status (Lead / Abgebrochen / nur besucht).
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Eye, FileText, ListOrdered, Phone, CheckCircle2, Mail, Smartphone, Monitor } from "lucide-react";
+import { ChevronDown, ChevronUp, Eye, FileText, ListOrdered, Phone, CheckCircle2, Mail, Smartphone, Monitor, Building2 } from "lucide-react";
 import { formatDateTime, relativeTime } from "@/lib/admin/format";
 
 export type JourneyItem = {
@@ -12,6 +12,7 @@ export type JourneyItem = {
   end: string;
   source?: { label: string; emoji: string; keyword?: string };
   device?: string;
+  company?: string;
   events: { ts: string; t: string; p?: string }[];
   lead?: { id: string; name: string };
   abandoned?: { name?: string; email?: string; phone?: string; service?: string; step: number; status: string };
@@ -48,6 +49,11 @@ function Row({ item }: { item: JourneyItem }) {
         {item.source && (
           <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-neutral-600">
             {item.source.emoji} {item.source.label}{item.source.keyword ? <span className="font-normal text-neutral-400">· „{item.source.keyword}“</span> : null}
+          </span>
+        )}
+        {item.company && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-[#eef3e7] px-2 py-0.5 text-[11px] font-bold text-[#4a7029]" title="Erkanntes Unternehmen (IP-Bereich)">
+            <Building2 size={11} /> {item.company}
           </span>
         )}
         {item.device && (item.device === "mobile" ? <Smartphone size={12} className="text-neutral-400" /> : <Monitor size={12} className="text-neutral-400" />)}

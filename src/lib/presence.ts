@@ -17,6 +17,7 @@ export type PresenceEntry = {
   ip?: string;
   country?: string; // ISO-Code aus Cloudflare-Header (cf-ipcountry)
   device?: "mobile" | "desktop";
+  company?: string | null; // Firmen-Erkennung (RDAP/PTR); null = geprüft, keine Firma
 };
 
 const STALE_MS = 45_000;
@@ -53,7 +54,14 @@ export function updatePresence(
     ip: tech?.ip ?? prev?.ip,
     country: tech?.country ?? prev?.country,
     device: tech?.device ?? prev?.device,
+    company: prev?.company,
   });
+}
+
+/** Ergebnis der (asynchronen) Firmen-Erkennung nachtragen. */
+export function setPresenceCompany(sid: string, company: string | null): void {
+  const entry = store.get(sid);
+  if (entry) entry.company = company;
 }
 
 export function presenceSnapshot(): PresenceEntry[] {

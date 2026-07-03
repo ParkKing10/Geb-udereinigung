@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Marketing – Deutsche Gebäudedienste" };
 
 type StoredSession = {
-  ts: string; sid?: string; source: string; label: string; emoji: string; device: string; landing: string; keyword?: string; campaign?: string;
+  ts: string; sid?: string; source: string; label: string; emoji: string; device: string; landing: string; keyword?: string; campaign?: string; company?: string;
 };
 
 export default async function MarketingPage() {
@@ -63,6 +63,7 @@ export default async function MarketingPage() {
         end: events[events.length - 1].ts,
         source: sess ? { label: sess.label, emoji: sess.emoji, keyword: sess.keyword } : undefined,
         device: sess?.device,
+        company: sess?.company,
         events,
         lead: lead ? { id: lead.id, name: lead.name } : undefined,
         abandoned: ab ? { name: ab.name, email: ab.email, phone: ab.phone, service: ab.service, step: ab.step, status: ab.status } : undefined,

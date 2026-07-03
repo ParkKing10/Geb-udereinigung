@@ -24,6 +24,7 @@ export async function GET() {
     ip: v.ip,
     country: v.country,
     device: v.device,
+    company: v.company ?? undefined,
   }));
   return NextResponse.json({
     count: visitors.length,

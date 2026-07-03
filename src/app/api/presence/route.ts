@@ -1,5 +1,6 @@
-import { updatePresence, type QuoteState } from "@/lib/presence";
+import { updatePresence, setPresenceCompany, presenceSnapshot, type QuoteState } from "@/lib/presence";
 import { deriveSource } from "@/lib/marketing/source";
+import { lookupCompany } from "@/lib/company-lookup";
 
 export const runtime = "nodejs";
 
@@ -44,5 +45,13 @@ export async function POST(req: Request) {
   const device = body?.device === "mobile" ? "mobile" as const : body?.device === "desktop" ? "desktop" as const : undefined;
 
   updatePresence(sid, path, quote, { label: src.label, emoji: src.emoji, keyword: S(t.utm_term, 100) }, { ip, country, device });
+
+  // Firmen-Erkennung asynchron nachziehen (blockiert den Beacon nicht; gecacht).
+  if (ip && presenceSnapshot().find((v) => v.sid === sid)?.company === undefined) {
+    void lookupCompany(ip)
+      .then((company) => setPresenceCompany(sid, company))
+      .catch(() => {});
+  }
+
   return new Response(null, { status: 204 });
 }
