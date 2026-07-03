@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Save, Check, Loader2, BarChart3, Sparkles, Mail, ScrollText, ArrowRight, ShieldCheck } from "lucide-react";
+import { Save, Check, Loader2, BarChart3, Sparkles, Mail, ScrollText, ArrowRight, ShieldCheck, BellRing } from "lucide-react";
 import type { SafeAppSettings } from "@/lib/admin/app-settings";
 
 const field = "w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#5d8a34] focus:ring-2 focus:ring-[#5d8a34]/15";
@@ -49,6 +49,11 @@ export function SettingsHub({ initial }: { initial: SafeAppSettings }) {
   const [hasKey, setHasKey] = useState(initial.ai.hasKey);
   const [aiSaving, setAiSaving] = useState(false); const [aiSaved, setAiSaved] = useState(false);
 
+  const [poToken, setPoToken] = useState("");
+  const [poUser, setPoUser] = useState("");
+  const [hasPushover, setHasPushover] = useState(initial.notify.hasPushover);
+  const [poSaving, setPoSaving] = useState(false); const [poSaved, setPoSaved] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
 
   async function saveTracking() {
@@ -76,6 +81,21 @@ export function SettingsHub({ initial }: { initial: SafeAppSettings }) {
       setKey("");
       setAiSaved(true);
     } catch (e) { setError(e instanceof Error ? e.message : "Fehler"); } finally { setAiSaving(false); }
+  }
+
+  async function savePushover() {
+    setPoSaving(true); setPoSaved(false); setError(null);
+    try {
+      const res = await fetch("/api/admin/app-settings", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notify: { ...(poToken ? { pushoverToken: poToken } : {}), ...(poUser ? { pushoverUser: poUser } : {}) } }),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error || "Fehler");
+      setHasPushover(j.notify?.hasPushover ?? hasPushover);
+      setPoToken(""); setPoUser("");
+      setPoSaved(true);
+    } catch (e) { setError(e instanceof Error ? e.message : "Fehler"); } finally { setPoSaving(false); }
   }
 
   const trackingOn = Boolean(gaId || adsId);
@@ -125,7 +145,29 @@ export function SettingsHub({ initial }: { initial: SafeAppSettings }) {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
+        {/* Lead-Push via Pushover */}
+        <Card icon={BellRing} title="Lead-Benachrichtigung (Pushover)" hint="Bei jedem neuen Lead sofort ein Push aufs Handy: „New Lead Alert“ mit Name & Nummer.">
+          <div className="space-y-3">
+            <label className="block">
+              <span className={lbl}>API-Token {hasPushover && <span className="text-[#5d8a34]">· eingerichtet</span>}</span>
+              <input type="password" className={field} value={poToken} onChange={(e) => setPoToken(e.target.value)} placeholder={hasPushover ? "•••••••• (unverändert lassen)" : "Pushover App-Token"} />
+            </label>
+            <label className="block">
+              <span className={lbl}>User-Key</span>
+              <input type="password" className={field} value={poUser} onChange={(e) => setPoUser(e.target.value)} placeholder={hasPushover ? "•••••••• (unverändert lassen)" : "steht auf pushover.net oben („Your User Key“)"} />
+            </label>
+            <p className="text-xs text-neutral-400">Beide Werte werden sicher gespeichert und nie im Klartext zurückgegeben. Push kommt mit hoher Priorität + Kassenklingel-Ton. 💰</p>
+            <div className="flex justify-end">
+              <button onClick={savePushover} disabled={poSaving} className="inline-flex items-center gap-2 rounded-lg bg-[#16241a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0f1c14] disabled:opacity-60">
+                {poSaving ? <Loader2 size={15} className="animate-spin" /> : poSaved ? <Check size={15} /> : <Save size={15} />} {poSaved ? "Gespeichert" : "Speichern"}
+              </button>
+            </div>
+          </div>
+        </Card>
         <LinkCard icon={Mail} title="E-Mail-Postfach" hint="SMTP/IMAP verbinden, Signaturen & Absender – im E-Mail-Bereich." href="/admin/email" cta="Öffnen" />
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-2">
         <LinkCard icon={ScrollText} title="Rechtstexte" hint="Impressum, Datenschutz & AGB direkt bearbeiten." href="/admin/rechtstexte" cta="Bearbeiten" />
       </div>
     </div>
