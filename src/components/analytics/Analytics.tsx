@@ -8,6 +8,7 @@ import { track, trackCall, trackEmailClick, gaId, setRuntimeTracking, getSid, jo
 import type { TrackingSettings } from "@/lib/admin/app-settings";
 import { captureAttribution, getAttribution, getTouch } from "@/lib/attribution";
 import { ClarityTag } from "./ClarityTag";
+import { LeadfeederTag } from "./LeadfeederTag";
 
 // First-Party-Session-Ping (einmal pro Session) für das interne Marketing-Dashboard.
 // Aggregat/cookielos; gclid nur bei erteilter Einwilligung (getAttribution ist consent-gated).
@@ -133,6 +134,7 @@ export function Analytics({ tracking }: { tracking?: TrackingSettings }) {
     <>
       <GoogleTag />
       <ClarityTag />
+      <LeadfeederTag />
       <ConsentBanner />
       <Suspense fallback={null}>
         <PageViews />
