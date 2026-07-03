@@ -11,6 +11,9 @@ type Visitor = {
   path: string;
   seconds: number;
   quote: { open: boolean; step: number; hasContact: boolean } | null;
+  label?: string;
+  emoji?: string;
+  keyword?: string;
 };
 
 function fmtDuration(s: number): string {
@@ -62,6 +65,11 @@ export function LiveVisitors() {
               <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
               <span className="max-w-[220px] truncate font-medium text-neutral-800">{v.path}</span>
               <span className="text-xs text-neutral-400">{fmtDuration(v.seconds)}</span>
+              {v.label && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-neutral-600" title="Herkunft">
+                  {v.emoji} {v.label}{v.keyword ? <span className="font-normal text-neutral-400">· „{v.keyword}“</span> : null}
+                </span>
+              )}
               {v.quote?.open && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
                   <FileText size={11} /> Formular · Schritt {v.quote.step + 1}/3

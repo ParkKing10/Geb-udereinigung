@@ -1,9 +1,16 @@
 import { updatePresence, type QuoteState } from "@/lib/presence";
+import { deriveSource } from "@/lib/marketing/source";
 
 export const runtime = "nodejs";
 
+const S = (v: unknown, max = 200): string | undefined => {
+  if (typeof v !== "string") return undefined;
+  const t = v.trim().slice(0, max);
+  return t || undefined;
+};
+
 // Öffentlicher Besucher-Beacon (alle ~15 s + bei Formular-Änderungen).
-// Bewusst anonym: nur Session-ID, Pfad und Formular-Fortschritt – keine PII.
+// Anonym: Session-ID, Pfad, Formular-Fortschritt + Herkunft (Referrer/UTM, keine Klick-IDs).
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const sid = typeof body?.sid === "string" ? body.sid : "";
@@ -20,6 +27,15 @@ export async function POST(req: Request) {
       hasContact: !!q.hasContact,
     };
   }
-  updatePresence(sid, path, quote);
+
+  // Herkunft ableiten (Google Ads / Google / Bing / Social / Referral / Direct).
+  const t = body?.touch && typeof body.touch === "object" ? body.touch : {};
+  const src = deriveSource({
+    utm_source: S(t.utm_source, 100),
+    utm_medium: S(t.utm_medium, 100),
+    referrer: S(t.referrer, 200),
+  });
+
+  updatePresence(sid, path, quote, { label: src.label, emoji: src.emoji, keyword: S(t.utm_term, 100) });
   return new Response(null, { status: 204 });
 }

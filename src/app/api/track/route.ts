@@ -10,6 +10,7 @@ const MAX_ROWS = 50000; // Ringpuffer gegen unbegrenztes Wachstum
 
 export type SessionRow = {
   ts: string;
+  sid?: string; // verknüpft Session ↔ Lead (Conversion-Anzeige im Marketing)
   source: string;
   label: string;
   emoji: string;
@@ -45,8 +46,10 @@ export async function POST(req: Request) {
     referrer: s(b.referrer, 300),
   });
 
+  const sidRaw = s(b.sid, 40);
   const row: SessionRow = {
     ts: new Date().toISOString(),
+    sid: sidRaw && /^[a-f0-9-]{8,40}$/i.test(sidRaw) ? sidRaw : undefined,
     source: src.key,
     label: src.label,
     emoji: src.emoji,

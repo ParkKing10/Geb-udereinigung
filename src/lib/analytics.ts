@@ -120,16 +120,22 @@ export function trackAdsConversion(
   });
 }
 
+// Event für Consent-Abhänger (z. B. Clarity lädt erst nach Einwilligung).
+export const CONSENT_EVENT = "dgd:consent-change";
+
 // Consent Mode v2 aktualisieren (nach Nutzerentscheidung).
 export function updateConsent(granted: boolean): void {
-  if (typeof window === "undefined" || typeof window.gtag !== "function") return;
-  const v = granted ? "granted" : "denied";
-  window.gtag("consent", "update", {
-    ad_storage: v,
-    ad_user_data: v,
-    ad_personalization: v,
-    analytics_storage: v,
-  });
+  if (typeof window === "undefined") return;
+  if (typeof window.gtag === "function") {
+    const v = granted ? "granted" : "denied";
+    window.gtag("consent", "update", {
+      ad_storage: v,
+      ad_user_data: v,
+      ad_personalization: v,
+      analytics_storage: v,
+    });
+  }
+  window.dispatchEvent(new CustomEvent(CONSENT_EVENT, { detail: { granted } }));
 }
 
 // ── Lead-Wert (turnus-basiert) für wertbasiertes Bidding ──

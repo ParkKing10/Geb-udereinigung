@@ -52,6 +52,8 @@ export async function POST(req: Request) {
 
   const id = `lead_${Date.now()}`;
   const serviceName = SERVICES.find((s) => s.slug === service)?.name ?? service;
+  const sidRaw = String(form.get("sid") ?? "").trim();
+  const sid = /^[a-f0-9-]{8,40}$/i.test(sidRaw) ? sidRaw : null;
 
   // Attribution (gclid/utm/referrer) aus den attr_*-Feldern übernehmen – für Ads-Offline-Conversions & Quellen-Reporting.
   const attribution: Record<string, string> = {};
@@ -87,6 +89,7 @@ export async function POST(req: Request) {
     createdAt: new Date().toISOString(),
     areaSqm, objektart, verschmutzung, turnus, zeitfenster, firma, besonderheiten, details,
     attribution: Object.keys(attribution).length ? attribution : null,
+    sid,
     images: imagePaths,
     estimate,
     offer: null,
@@ -103,8 +106,7 @@ export async function POST(req: Request) {
   }
 
   // Erfolgreich abgeschickt → evtl. vorhandenen "abgebrochen"-Eintrag dieser Session entfernen.
-  const sid = String(form.get("sid") ?? "").trim();
-  if (/^[a-f0-9-]{8,40}$/i.test(sid)) await deleteAbandoned(sid).catch(() => {});
+  if (sid) await deleteAbandoned(sid).catch(() => {});
 
   // Push-Benachrichtigung an den Betreiber (fire-and-forget, blockiert die Antwort nicht).
   void sendLeadAlert({ name, phone });

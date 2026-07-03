@@ -47,6 +47,7 @@ export type Lead = {
   besonderheiten?: string | null;
   details?: { label: string; value: string }[]; // weitere optionale Angaben (Etagen, Aufzug, …)
   attribution?: Record<string, string> | null; // gclid/utm/referrer für Ads-Zuordnung
+  sid?: string | null; // Session-ID → verknüpft den Lead mit seiner Besucher-Session
   images?: string[]; // öffentliche Pfade unter /uploads/leads/<id>/
   estimate?: AiEstimate | null;
   offer?: AdminOffer | null;

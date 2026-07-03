@@ -96,6 +96,17 @@ export function getAttribution(): Attribution {
   return readCookie() || {};
 }
 
+// First-Touch-Infos für anonyme First-Party-Statistik (Presence/Session):
+// Referrer + UTM aus dem Speicher – KEINE Klick-IDs (die bleiben consent-gated).
+export function getTouch(): { referrer?: string; utm_source?: string; utm_medium?: string; utm_term?: string } {
+  return {
+    referrer: session.referrer,
+    utm_source: session.utm_source,
+    utm_medium: session.utm_medium,
+    utm_term: session.utm_term,
+  };
+}
+
 // attr_*-Felder an FormData hängen – NUR mit Einwilligung (sonst keine Klick-IDs am Lead).
 export function appendAttribution(fd: FormData): void {
   if (readConsent() !== "granted") return;

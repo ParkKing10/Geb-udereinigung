@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Marketing – Deutsche Gebäudedienste" };
 
 type StoredSession = {
-  ts: string; source: string; label: string; emoji: string; device: string; landing: string; keyword?: string; campaign?: string;
+  ts: string; sid?: string; source: string; label: string; emoji: string; device: string; landing: string; keyword?: string; campaign?: string;
 };
 
 export default async function MarketingPage() {
@@ -17,9 +17,17 @@ export default async function MarketingPage() {
     ts: s.ts, source: s.source, label: s.label, emoji: s.emoji, device: s.device, landing: s.landing, keyword: s.keyword, campaign: s.campaign,
   }));
 
+  // Session-Verknüpfung: Leads ohne Cookie-Attribution (z. B. Einwilligung abgelehnt)
+  // erben Quelle/Keyword ihrer Besucher-Session über die Session-ID.
+  const bySid = new Map(rawSessions.filter((s) => s.sid).map((s) => [s.sid as string, s]));
+
   const mLeads: MLead[] = leads.map((l) => {
     const attr = l.attribution || {};
     const src = deriveSource({ gclid: attr.gclid, gbraid: attr.gbraid, wbraid: attr.wbraid, utm_source: attr.utm_source, utm_medium: attr.utm_medium, referrer: attr.referrer });
+    const sess = l.sid ? bySid.get(l.sid) : undefined;
+    if (src.key === "direct" && sess && sess.source !== "direct") {
+      return { ts: l.createdAt, id: l.id, source: sess.source, label: sess.label, emoji: sess.emoji, keyword: sess.keyword, campaign: sess.campaign, landing: sess.landing };
+    }
     return { ts: l.createdAt, id: l.id, source: src.key, label: src.label, emoji: src.emoji, keyword: attr.utm_term, campaign: attr.utm_campaign, landing: attr.landing_page };
   });
 

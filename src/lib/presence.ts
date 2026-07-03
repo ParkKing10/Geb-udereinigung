@@ -9,6 +9,10 @@ export type PresenceEntry = {
   firstSeen: number;
   lastSeen: number;
   quote: QuoteState | null;
+  // Herkunft (server-seitig aus Referrer/UTM abgeleitet, anonym)
+  label?: string;
+  emoji?: string;
+  keyword?: string;
 };
 
 const STALE_MS = 45_000;
@@ -23,7 +27,12 @@ function prune(): void {
   for (const [k, v] of store) if (v.lastSeen < cut) store.delete(k);
 }
 
-export function updatePresence(sid: string, path: string, quote: QuoteState | null): void {
+export function updatePresence(
+  sid: string,
+  path: string,
+  quote: QuoteState | null,
+  src?: { label: string; emoji: string; keyword?: string },
+): void {
   prune();
   const now = Date.now();
   const prev = store.get(sid);
@@ -33,6 +42,9 @@ export function updatePresence(sid: string, path: string, quote: QuoteState | nu
     firstSeen: prev?.firstSeen ?? now,
     lastSeen: now,
     quote,
+    label: src?.label ?? prev?.label,
+    emoji: src?.emoji ?? prev?.emoji,
+    keyword: src?.keyword ?? prev?.keyword,
   });
 }
 

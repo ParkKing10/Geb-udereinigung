@@ -6,7 +6,8 @@ import { GoogleTag } from "./GoogleTag";
 import { ConsentBanner } from "./ConsentBanner";
 import { track, trackCall, trackEmailClick, gaId, setRuntimeTracking, getSid } from "@/lib/analytics";
 import type { TrackingSettings } from "@/lib/admin/app-settings";
-import { captureAttribution, getAttribution } from "@/lib/attribution";
+import { captureAttribution, getAttribution, getTouch } from "@/lib/attribution";
+import { ClarityTag } from "./ClarityTag";
 
 // First-Party-Session-Ping (einmal pro Session) für das interne Marketing-Dashboard.
 // Aggregat/cookielos; gclid nur bei erteilter Einwilligung (getAttribution ist consent-gated).
@@ -20,6 +21,7 @@ function sendSessionPing() {
   const p = new URLSearchParams(window.location.search);
   const a = getAttribution();
   const body = JSON.stringify({
+    sid: getSid(), // verknüpft Session ↔ Lead (Conversion-Anzeige im Marketing)
     landing: window.location.pathname + window.location.search,
     referrer: document.referrer || "",
     device: window.matchMedia("(max-width: 768px)").matches ? "mobile" : "desktop",
@@ -71,7 +73,7 @@ function PresenceBeacon() {
     const send = () => {
       const sid = getSid();
       if (!sid) return;
-      const body = JSON.stringify({ sid, path: window.location.pathname, quote: window.__dgdQuote ?? null });
+      const body = JSON.stringify({ sid, path: window.location.pathname, quote: window.__dgdQuote ?? null, touch: getTouch() });
       try {
         if (navigator.sendBeacon) navigator.sendBeacon("/api/presence", new Blob([body], { type: "application/json" }));
         else fetch("/api/presence", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
@@ -123,6 +125,7 @@ export function Analytics({ tracking }: { tracking?: TrackingSettings }) {
   return (
     <>
       <GoogleTag />
+      <ClarityTag />
       <ConsentBanner />
       <Suspense fallback={null}>
         <PageViews />

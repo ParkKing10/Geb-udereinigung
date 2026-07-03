@@ -18,6 +18,9 @@ export async function GET() {
     path: v.path,
     seconds: Math.max(0, Math.round((now - v.firstSeen) / 1000)),
     quote: v.quote,
+    label: v.label,
+    emoji: v.emoji,
+    keyword: v.keyword,
   }));
   return NextResponse.json({
     count: visitors.length,
