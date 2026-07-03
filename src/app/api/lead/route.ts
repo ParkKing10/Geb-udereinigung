@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { dataPath, uploadPath } from "@/lib/data-dir";
 import { deleteAbandoned } from "@/lib/admin/abandoned";
+import { appendJourneyEvent } from "@/lib/journeys";
 import { sendLeadAlert } from "@/lib/notify";
 import { SERVICES } from "@/lib/sauberfit-data";
 import { estimateLead } from "@/lib/ai/estimate";
@@ -106,7 +107,10 @@ export async function POST(req: Request) {
   }
 
   // Erfolgreich abgeschickt → evtl. vorhandenen "abgebrochen"-Eintrag dieser Session entfernen.
-  if (sid) await deleteAbandoned(sid).catch(() => {});
+  if (sid) {
+    await deleteAbandoned(sid).catch(() => {});
+    await appendJourneyEvent({ sid, t: "submit", p: id }).catch(() => {});
+  }
 
   // Push-Benachrichtigung an den Betreiber (fire-and-forget, blockiert die Antwort nicht).
   void sendLeadAlert({ name, phone });

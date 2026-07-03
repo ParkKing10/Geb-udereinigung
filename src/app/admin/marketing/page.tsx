@@ -2,6 +2,9 @@ import { readSessions, readLeads, readOrders } from "@/lib/admin/store";
 import { deriveSource } from "@/lib/marketing/source";
 import type { MSession, MLead, MOrder } from "@/lib/marketing/aggregate";
 import { MarketingDashboard } from "@/components/admin/MarketingDashboard";
+import { JourneysPanel, type JourneyItem } from "@/components/admin/JourneysPanel";
+import { readJourneyEvents } from "@/lib/journeys";
+import { listAbandoned } from "@/lib/admin/abandoned";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Marketing – Deutsche Gebäudedienste" };
@@ -11,7 +14,9 @@ type StoredSession = {
 };
 
 export default async function MarketingPage() {
-  const [rawSessions, leads, orders] = await Promise.all([readSessions<StoredSession>(), readLeads(), readOrders()]);
+  const [rawSessions, leads, orders, journeyEvents, abandoned] = await Promise.all([
+    readSessions<StoredSession>(), readLeads(), readOrders(), readJourneyEvents(), listAbandoned(),
+  ]);
 
   const sessions: MSession[] = rawSessions.map((s) => ({
     ts: s.ts, source: s.source, label: s.label, emoji: s.emoji, device: s.device, landing: s.landing, keyword: s.keyword, campaign: s.campaign,
@@ -36,5 +41,40 @@ export default async function MarketingPage() {
     .filter((o) => o.status !== "Storniert")
     .map((o) => ({ ts: o.createdAt, source: o.source, label: o.sourceLabel, emoji: o.sourceEmoji, value: o.amountCents / 100, keyword: o.keyword, campaign: o.campaign }));
 
-  return <MarketingDashboard sessions={sessions} leads={mLeads} orders={mOrders} />;
+  // ── Besucher-Journeys: Events je Session gruppieren + mit Quelle/Lead/Abbruch verknüpfen ──
+  const grouped = new Map<string, { ts: string; t: string; p?: string }[]>();
+  for (const ev of journeyEvents) {
+    const list = grouped.get(ev.sid) ?? [];
+    list.push({ ts: ev.ts, t: ev.t, p: ev.p });
+    grouped.set(ev.sid, list);
+  }
+  const leadBySid = new Map(leads.filter((l) => l.sid).map((l) => [l.sid as string, l]));
+  const abandonedById = new Map(abandoned.map((a) => [a.id, a]));
+
+  const journeys: JourneyItem[] = Array.from(grouped.entries())
+    .map(([sid, events]) => {
+      events.sort((a, b) => (a.ts < b.ts ? -1 : 1));
+      const sess = bySid.get(sid);
+      const lead = leadBySid.get(sid);
+      const ab = abandonedById.get(sid);
+      return {
+        sid,
+        start: events[0].ts,
+        end: events[events.length - 1].ts,
+        source: sess ? { label: sess.label, emoji: sess.emoji, keyword: sess.keyword } : undefined,
+        device: sess?.device,
+        events,
+        lead: lead ? { id: lead.id, name: lead.name } : undefined,
+        abandoned: ab ? { name: ab.name, email: ab.email, phone: ab.phone, service: ab.service, step: ab.step, status: ab.status } : undefined,
+      };
+    })
+    .sort((a, b) => (a.end < b.end ? 1 : -1))
+    .slice(0, 60);
+
+  return (
+    <>
+      <MarketingDashboard sessions={sessions} leads={mLeads} orders={mOrders} />
+      <JourneysPanel items={journeys} />
+    </>
+  );
 }

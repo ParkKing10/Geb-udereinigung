@@ -13,6 +13,10 @@ export type PresenceEntry = {
   label?: string;
   emoji?: string;
   keyword?: string;
+  // Technik-Infos – nur im flüchtigen Speicher, wird NIE persistiert (DSGVO)
+  ip?: string;
+  country?: string; // ISO-Code aus Cloudflare-Header (cf-ipcountry)
+  device?: "mobile" | "desktop";
 };
 
 const STALE_MS = 45_000;
@@ -32,6 +36,7 @@ export function updatePresence(
   path: string,
   quote: QuoteState | null,
   src?: { label: string; emoji: string; keyword?: string },
+  tech?: { ip?: string; country?: string; device?: "mobile" | "desktop" },
 ): void {
   prune();
   const now = Date.now();
@@ -45,6 +50,9 @@ export function updatePresence(
     label: src?.label ?? prev?.label,
     emoji: src?.emoji ?? prev?.emoji,
     keyword: src?.keyword ?? prev?.keyword,
+    ip: tech?.ip ?? prev?.ip,
+    country: tech?.country ?? prev?.country,
+    device: tech?.device ?? prev?.device,
   });
 }
 

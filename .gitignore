@@ -79,3 +79,5 @@ public/uploads/
 
 # Hinweis: site-content.json, blog-posts.json, blog-config.json werden bewusst
 # als Seed-Content committet (kein PII/Secret) – so ist die Live-Seite sofort befüllt.
+# Besucher-Journeys (Laufzeitdaten)
+journeys.json

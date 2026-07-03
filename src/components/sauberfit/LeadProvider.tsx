@@ -5,7 +5,7 @@ import Image from "next/image";
 import { X, ArrowRight, ArrowLeft, Check, Sparkles, ShieldCheck, ImagePlus, Trash2, Plus, ChevronUp } from "lucide-react";
 import { SERVICES } from "@/lib/sauberfit-data";
 import type { ContactPerson } from "@/lib/site-content";
-import { trackQuoteOpen, trackQuoteStep, trackLead, leadValue, getSid } from "@/lib/analytics";
+import { trackQuoteOpen, trackQuoteStep, trackLead, leadValue, getSid, journey } from "@/lib/analytics";
 import { appendAttribution, getAttribution } from "@/lib/attribution";
 
 const STEP_NAMES = ["Leistung", "Objekt", "Kontakt"];
@@ -122,6 +122,7 @@ export function LeadProvider({ children, person }: { children: React.ReactNode; 
     setDone(false);
     setIsOpen(true);
     trackQuoteOpen(service ? "service" : "cta", service);
+    journey("quote_open");
   }
   function close() {
     setIsOpen(false);
@@ -158,6 +159,7 @@ export function LeadProvider({ children, person }: { children: React.ReactNode; 
     if (step === 1 && !form.objektart) return setError("Bitte wählen Sie die Objektart.");
     const target = Math.min(step + 1, 2);
     trackQuoteStep(target, STEP_NAMES[target]);
+    journey("quote_step", String(target + 1));
     setStep(target);
   }
   function back() {

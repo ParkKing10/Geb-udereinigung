@@ -36,6 +36,13 @@ export async function POST(req: Request) {
     referrer: S(t.referrer, 200),
   });
 
-  updatePresence(sid, path, quote, { label: src.label, emoji: src.emoji, keyword: S(t.utm_term, 100) });
+  // Technik: IP (erster Hop) + Land (Cloudflare-Header). Bleibt nur im flüchtigen
+  // Presence-Speicher (max. 45 s nach letztem Beacon) – wird nirgends persistiert.
+  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim().slice(0, 45) || undefined;
+  const countryRaw = (req.headers.get("cf-ipcountry") ?? "").trim().toUpperCase();
+  const country = /^[A-Z]{2}$/.test(countryRaw) && countryRaw !== "XX" ? countryRaw : undefined;
+  const device = body?.device === "mobile" ? "mobile" as const : body?.device === "desktop" ? "desktop" as const : undefined;
+
+  updatePresence(sid, path, quote, { label: src.label, emoji: src.emoji, keyword: S(t.utm_term, 100) }, { ip, country, device });
   return new Response(null, { status: 204 });
 }

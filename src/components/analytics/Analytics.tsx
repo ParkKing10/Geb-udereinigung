@@ -4,7 +4,7 @@ import { Suspense, useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { GoogleTag } from "./GoogleTag";
 import { ConsentBanner } from "./ConsentBanner";
-import { track, trackCall, trackEmailClick, gaId, setRuntimeTracking, getSid } from "@/lib/analytics";
+import { track, trackCall, trackEmailClick, gaId, setRuntimeTracking, getSid, journey } from "@/lib/analytics";
 import type { TrackingSettings } from "@/lib/admin/app-settings";
 import { captureAttribution, getAttribution, getTouch } from "@/lib/attribution";
 import { ClarityTag } from "./ClarityTag";
@@ -73,7 +73,13 @@ function PresenceBeacon() {
     const send = () => {
       const sid = getSid();
       if (!sid) return;
-      const body = JSON.stringify({ sid, path: window.location.pathname, quote: window.__dgdQuote ?? null, touch: getTouch() });
+      const body = JSON.stringify({
+        sid,
+        path: window.location.pathname,
+        quote: window.__dgdQuote ?? null,
+        touch: getTouch(),
+        device: window.matchMedia("(max-width: 768px)").matches ? "mobile" : "desktop",
+      });
       try {
         if (navigator.sendBeacon) navigator.sendBeacon("/api/presence", new Blob([body], { type: "application/json" }));
         else fetch("/api/presence", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
@@ -83,6 +89,7 @@ function PresenceBeacon() {
     };
     window.__dgdPresencePing = send;
     send();
+    journey("view", window.location.pathname); // Journey: jede besuchte Seite
     const iv = window.setInterval(send, 15_000);
     const onVis = () => { if (document.visibilityState === "visible") send(); };
     document.addEventListener("visibilitychange", onVis);

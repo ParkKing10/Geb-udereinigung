@@ -4,7 +4,7 @@
 // Zeigt wer online ist, wer das Angebots-Formular offen hat (inkl. Schritt) und
 // ob bereits Kontaktdaten eingetippt wurden.
 import { useEffect, useState } from "react";
-import { Radio, FileText, Phone } from "lucide-react";
+import { Radio, FileText, Phone, Smartphone, Monitor } from "lucide-react";
 
 type Visitor = {
   sid: string;
@@ -14,11 +14,20 @@ type Visitor = {
   label?: string;
   emoji?: string;
   keyword?: string;
+  ip?: string;
+  country?: string;
+  device?: "mobile" | "desktop";
 };
 
 function fmtDuration(s: number): string {
   if (s < 60) return `${s}s`;
   return `${Math.floor(s / 60)}m ${s % 60}s`;
+}
+
+// ISO-Ländercode → Flaggen-Emoji (DE → 🇩🇪)
+function flag(cc?: string): string {
+  if (!cc || cc.length !== 2) return "";
+  return String.fromCodePoint(...[...cc.toUpperCase()].map((c) => 0x1f1a5 + c.charCodeAt(0)));
 }
 
 export function LiveVisitors() {
@@ -68,6 +77,16 @@ export function LiveVisitors() {
               {v.label && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-neutral-600" title="Herkunft">
                   {v.emoji} {v.label}{v.keyword ? <span className="font-normal text-neutral-400">· „{v.keyword}“</span> : null}
+                </span>
+              )}
+              {v.device && (
+                <span className="inline-flex items-center gap-1 text-[11px] text-neutral-400" title={v.device === "mobile" ? "Handy" : "Desktop"}>
+                  {v.device === "mobile" ? <Smartphone size={12} /> : <Monitor size={12} />}
+                </span>
+              )}
+              {(v.country || v.ip) && (
+                <span className="inline-flex items-center gap-1 font-mono text-[11px] text-neutral-400" title="Land / IP (nur live, wird nicht gespeichert)">
+                  {flag(v.country)} {v.ip}
                 </span>
               )}
               {v.quote?.open && (

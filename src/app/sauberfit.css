@@ -371,8 +371,9 @@ img { display: block; max-width: 100%; }
 .sf-logos { border-top: 1px solid var(--border); background: var(--surface); padding: 1.5rem 1.5rem 1.75rem; text-align: center; }
 .sf-logos-label { display: block; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .sf-logos-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 1rem 2.4rem; margin-top: 1rem; max-width: var(--maxw); margin-inline: auto; }
-.sf-logo-item { opacity: 0; transform: translateY(10px); transition: opacity 0.5s var(--ease), transform 0.5s var(--ease), filter 0.2s; filter: grayscale(1); }
-.sf-logo-item.in { opacity: 0.62; transform: none; }
+/* Immer sichtbar (kein JS-Gate mehr) – der frühere Scroll-Reveal ließ die
+   Kundenmarken in manchen Browsern dauerhaft bei opacity 0 hängen. */
+.sf-logo-item { opacity: 0.62; transition: opacity 0.2s var(--ease), filter 0.2s; filter: grayscale(1); }
 .sf-logo-item:hover { opacity: 1; filter: grayscale(0); }
 .sf-logo-word { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; color: #5b6357; }
 .sf-logo-img { object-fit: contain; height: 34px; width: auto; }

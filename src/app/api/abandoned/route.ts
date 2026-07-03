@@ -1,4 +1,5 @@
 import { upsertAbandoned } from "@/lib/admin/abandoned";
+import { appendJourneyEvent } from "@/lib/journeys";
 
 export const runtime = "nodejs";
 
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
     if (!Object.keys(attribution).length) attribution = undefined;
   }
 
-  await upsertAbandoned(sid, {
+  const created = await upsertAbandoned(sid, {
     step: Math.min(2, Math.max(0, Number(body.step) || 0)),
     service: S(body.service),
     location: S(body.location),
@@ -45,5 +46,6 @@ export async function POST(req: Request) {
     phone: hasPhone ? phone : undefined,
     attribution,
   });
+  if (created) await appendJourneyEvent({ sid, t: "contact" });
   return new Response(null, { status: 204 });
 }

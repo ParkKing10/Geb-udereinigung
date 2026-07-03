@@ -21,6 +21,9 @@ export async function GET() {
     label: v.label,
     emoji: v.emoji,
     keyword: v.keyword,
+    ip: v.ip,
+    country: v.country,
+    device: v.device,
   }));
   return NextResponse.json({
     count: visitors.length,

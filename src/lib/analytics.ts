@@ -11,6 +11,21 @@ declare global {
   }
 }
 
+// Journey-Beacon: protokolliert Seitenaufrufe/Formular-Schritte je Session fürs
+// Marketing-Menü ("welche Schritte hat der Besucher gemacht, wo abgebrochen").
+export function journey(t: "view" | "quote_open" | "quote_step", p?: string): void {
+  if (typeof window === "undefined") return;
+  const sid = getSid();
+  if (!sid) return;
+  const body = JSON.stringify({ sid, t, p });
+  try {
+    if (navigator.sendBeacon) navigator.sendBeacon("/api/journey", new Blob([body], { type: "application/json" }));
+    else fetch("/api/journey", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
+  } catch {
+    /* darf nie stören */
+  }
+}
+
 // Stabile anonyme Session-ID (pro Browser-Tab-Sitzung) für Presence + Abbruch-Erfassung.
 export function getSid(): string {
   if (typeof window === "undefined") return "";

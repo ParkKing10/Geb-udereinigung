@@ -40,14 +40,17 @@ export async function listAbandoned(): Promise<AbandonedLead[]> {
   return (await readAll()).sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
 }
 
+/** true = neu angelegt (erster Kontakt-Datensatz dieser Session). */
 export async function upsertAbandoned(
   sid: string,
   patch: Omit<Partial<AbandonedLead>, "id" | "createdAt" | "updatedAt" | "status">,
-): Promise<void> {
+): Promise<boolean> {
   const list = await readAll();
   const now = new Date().toISOString();
   const idx = list.findIndex((a) => a.id === sid);
+  let created = false;
   if (idx === -1) {
+    created = true;
     list.push({ id: sid, createdAt: now, updatedAt: now, step: patch.step ?? 0, status: "offen", ...patch });
   } else {
     // Nur nicht-leere Felder übernehmen – späteres Löschen im Formular soll Daten nicht wegwerfen.
@@ -59,6 +62,7 @@ export async function upsertAbandoned(
     list[idx] = merged;
   }
   await writeAll(list);
+  return created;
 }
 
 export async function deleteAbandoned(id: string): Promise<boolean> {
