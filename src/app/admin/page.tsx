@@ -1,25 +1,51 @@
 import Link from "next/link";
-import { Wallet, ReceiptText, Inbox, CalendarCheck, Plus, ArrowRight } from "lucide-react";
+import { Wallet, ReceiptText, Inbox, CalendarCheck, Plus, ArrowRight, Activity, Percent } from "lucide-react";
 import { PageHeader, StatCard, Panel, StatusBadge, table, btn } from "@/components/admin/ui";
 import { AreaChart } from "@/components/admin/charts";
 import { leadStatus } from "@/lib/admin/data";
-import { readLeads, readOrders } from "@/lib/admin/store";
+import { readLeads, readOrders, readSessions } from "@/lib/admin/store";
 import { readInvoices, effectiveStatus, grossCents, monthlyPaidGross } from "@/lib/admin/invoices";
 import { formatEUR, formatDate, relativeTime, initials } from "@/lib/admin/format";
 import { LiveVisitors } from "@/components/admin/LiveVisitors";
+import { DateRange } from "@/components/admin/DateRange";
 import { getActor, can } from "@/lib/admin/actor";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminDashboard() {
-  const [leads, orders, invoices, actor] = await Promise.all([readLeads(), readOrders(), readInvoices(), getActor()]);
+// Kalendertag in deutscher Zeit (Server läuft in UTC).
+const berlinDay = (iso: string) => new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
+const deDate = (day: string) => new Date(`${day}T12:00:00`).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" });
+
+export default async function AdminDashboard({ searchParams }: { searchParams: Promise<{ von?: string; bis?: string }> }) {
+  const [leads, orders, invoices, sessions, actor, sp] = await Promise.all([
+    readLeads(), readOrders(), readInvoices(), readSessions<{ ts?: string }>(), getActor(), searchParams,
+  ]);
   const now = Date.now();
+
+  // Zeitraum aus der URL (?von&bis, YYYY-MM-DD); Default = heute.
+  const today = berlinDay(new Date().toISOString());
+  const valid = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : today);
+  const [von, bis] = [valid(sp.von), valid(sp.bis)].sort();
+  const inRange = (iso?: string) => {
+    if (!iso) return false;
+    const d = berlinDay(iso);
+    return d >= von && d <= bis;
+  };
+  const periodLabel = von === bis ? (von === today ? "heute" : deDate(von)) : `${deDate(von)} – ${deDate(bis)}`;
+
+  // Kennzahlen im Zeitraum. sessions.json enthält genau einen Eintrag pro
+  // Browser-Session (sessionStorage-Guard) → Zeilenanzahl = unique Sessions.
+  const sessionsInRange = sessions.filter((r) => inRange(r.ts)).length;
+  const leadsInRange = leads.filter((l) => inRange(l.createdAt)).length;
+  const ordersInRange = orders.filter((o) => inRange(o.createdAt)).length;
+  const convRate = sessionsInRange > 0 ? ((leadsInRange / sessionsInRange) * 100).toLocaleString("de-DE", { maximumFractionDigits: 1 }) : "–";
 
   // Mitarbeiter sehen nur die Kennzahlen der Bereiche, für die sie Rechte haben.
   const show = (href: string) => (actor ? can(actor, href) : false);
   const showMoney = show("/admin/invoices") || show("/admin/finance");
   const showLeads = show("/admin/leads");
   const showOrders = show("/admin/auftraege");
+  const showSessions = show("/admin/marketing");
 
   // Umsatz aus echten bezahlten Rechnungen (letzte 8 Monate; aktueller vs. Vormonat).
   const series = monthlyPaidGross(invoices, 8);
@@ -41,7 +67,12 @@ export default async function AdminDashboard() {
       <PageHeader
         title="Dashboard"
         subtitle="Überblick über Umsatz, Aufträge und Anfragen"
-        actions={showOrders ? <Link href="/admin/auftraege" className={btn("primary")}><Plus size={16} /> Neuer Auftrag</Link> : undefined}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <DateRange />
+            {showOrders && <Link href="/admin/auftraege" className={btn("primary")}><Plus size={16} /> Neuer Auftrag</Link>}
+          </div>
+        }
       />
 
       {/* Live-Besucher: wer ist gerade auf der Website, wer steckt im Angebots-Formular? */}
@@ -49,12 +80,21 @@ export default async function AdminDashboard() {
         <LiveVisitors />
       </div>
 
+      {/* Kennzahlen im gewählten Zeitraum (Datumsfeld oben rechts) */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {showMoney && <StatCard label="Umsatz (Monat)" value={formatEUR(last)} delta={revDelta ? `${revDelta} %` : "bezahlte Rechnungen"} trend="up" icon={Wallet} hint="vs. Vormonat" />}
-        {showMoney && <StatCard label="Offene Rechnungen" value={formatEUR(openSum)} delta={`${overdue} überfällig`} trend="down" icon={ReceiptText} hint={`${openInvoices.length} offen`} />}
-        {showLeads && <StatCard label="Neue Leads" value={String(leads.length)} delta="Anfragen gesamt" trend="up" icon={Inbox} hint="aus dem Formular" />}
-        {showOrders && <StatCard label="Aktive Aufträge" value={String(activeOrders.length)} delta="in Bearbeitung" trend="up" icon={CalendarCheck} hint={`${orders.length} gesamt`} />}
+        {showSessions && <StatCard label="Unique Sessions" value={String(sessionsInRange)} delta={periodLabel} trend="up" icon={Activity} hint="einzelne Besucher-Sitzungen" />}
+        {showLeads && <StatCard label="Leads" value={String(leadsInRange)} delta={periodLabel} trend="up" icon={Inbox} hint="aus dem Formular" />}
+        {showSessions && showLeads && <StatCard label="Conversion-Rate" value={`${convRate} %`} delta="Leads / Sessions" trend="up" icon={Percent} hint={periodLabel} />}
+        {showOrders && <StatCard label="Neue Aufträge" value={String(ordersInRange)} delta={periodLabel} trend="up" icon={CalendarCheck} hint={`${activeOrders.length} aktiv gesamt`} />}
       </div>
+
+      {/* Globale Finanz-Kennzahlen (zeitraum-unabhängig) */}
+      {showMoney && (
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <StatCard label="Umsatz (Monat)" value={formatEUR(last)} delta={revDelta ? `${revDelta} %` : "bezahlte Rechnungen"} trend="up" icon={Wallet} hint="vs. Vormonat" />
+          <StatCard label="Offene Rechnungen" value={formatEUR(openSum)} delta={`${overdue} überfällig`} trend="down" icon={ReceiptText} hint={`${openInvoices.length} offen`} />
+        </div>
+      )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         {showMoney && <Panel
