@@ -48,6 +48,9 @@ export async function POST(req: Request) {
     referrer: s(b.referrer, 300),
   });
 
+  // Ohne Einwilligung sendet der Client nur die Klick-ID-Präsenz ("1") zur Quellen-
+  // Klassifizierung – der Platzhalter wird nicht als echte gclid gespeichert.
+  const gclid = s(b.gclid, 120);
   const sidRaw = s(b.sid, 40);
   const row: SessionRow = {
     ts: new Date().toISOString(),
@@ -60,7 +63,7 @@ export async function POST(req: Request) {
     keyword: s(b.utm_term, 120),
     campaign: s(b.utm_campaign, 120),
     medium: s(b.utm_medium, 60),
-    gclid: s(b.gclid, 120),
+    gclid: gclid === "1" ? undefined : gclid,
   };
 
   try {

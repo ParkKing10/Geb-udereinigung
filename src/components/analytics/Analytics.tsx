@@ -11,7 +11,9 @@ import { ClarityTag } from "./ClarityTag";
 import { LeadfeederTag } from "./LeadfeederTag";
 
 // First-Party-Session-Ping (einmal pro Session) für das interne Marketing-Dashboard.
-// Aggregat/cookielos; gclid nur bei erteilter Einwilligung (getAttribution ist consent-gated).
+// Aggregat/cookielos; volle Klick-IDs nur bei erteilter Einwilligung (getAttribution ist
+// consent-gated). Ohne Einwilligung wird nur die PRÄSENZ einer Klick-ID gemeldet ("1"),
+// damit Ads-Klicks nicht fälschlich als Organic gezählt werden – die ID selbst bleibt consent-pflichtig.
 function sendSessionPing() {
   try {
     if (sessionStorage.getItem("dgd_spv")) return;
@@ -21,6 +23,7 @@ function sendSessionPing() {
   }
   const p = new URLSearchParams(window.location.search);
   const a = getAttribution();
+  const click = (k: "gclid" | "gbraid" | "wbraid") => a[k] || (p.get(k) ? "1" : undefined);
   const body = JSON.stringify({
     sid: getSid(), // verknüpft Session ↔ Lead (Conversion-Anzeige im Marketing)
     landing: window.location.pathname + window.location.search,
@@ -31,10 +34,10 @@ function sendSessionPing() {
     utm_campaign: p.get("utm_campaign") || undefined,
     utm_term: p.get("utm_term") || undefined,
     utm_content: p.get("utm_content") || undefined,
-    msclkid: p.get("msclkid") || undefined,
-    gclid: a.gclid,
-    gbraid: a.gbraid,
-    wbraid: a.wbraid,
+    msclkid: p.get("msclkid") ? "1" : undefined, // nur Präsenz – die ID wird serverseitig nicht gespeichert
+    gclid: click("gclid"),
+    gbraid: click("gbraid"),
+    wbraid: click("wbraid"),
   });
   try {
     if (navigator.sendBeacon) navigator.sendBeacon("/api/track", new Blob([body], { type: "application/json" }));

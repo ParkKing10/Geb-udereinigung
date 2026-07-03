@@ -98,12 +98,15 @@ export function getAttribution(): Attribution {
 
 // First-Touch-Infos für anonyme First-Party-Statistik (Presence/Session):
 // Referrer + UTM aus dem Speicher – KEINE Klick-IDs (die bleiben consent-gated).
-export function getTouch(): { referrer?: string; utm_source?: string; utm_medium?: string; utm_term?: string } {
+// "paid" meldet nur die PRÄSENZ eines Google-Ads-Klicks (keine ID), damit
+// Ads-Besucher im Live-Dashboard nicht als Organic Google erscheinen.
+export function getTouch(): { referrer?: string; utm_source?: string; utm_medium?: string; utm_term?: string; paid?: "google" } {
   return {
     referrer: session.referrer,
     utm_source: session.utm_source,
     utm_medium: session.utm_medium,
     utm_term: session.utm_term,
+    paid: session.gclid || session.gbraid || session.wbraid ? "google" : undefined,
   };
 }
 

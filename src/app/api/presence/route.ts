@@ -30,8 +30,10 @@ export async function POST(req: Request) {
   }
 
   // Herkunft ableiten (Google Ads / Google / Bing / Social / Referral / Direct).
+  // touch.paid ist nur ein Präsenz-Flag (keine Klick-ID) → als Platzhalter-gclid werten.
   const t = body?.touch && typeof body.touch === "object" ? body.touch : {};
   const src = deriveSource({
+    gclid: t.paid === "google" ? "1" : undefined,
     utm_source: S(t.utm_source, 100),
     utm_medium: S(t.utm_medium, 100),
     referrer: S(t.referrer, 200),

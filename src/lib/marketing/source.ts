@@ -21,8 +21,10 @@ export function deriveSource(a: SourceInput): SourceInfo {
   const um = (a.utm_medium || "").toLowerCase();
   const h = host((a.referrer || "").toLowerCase()) || us;
   const isPaidMedium = um.includes("cpc") || um.includes("ppc") || um.includes("paid");
+  // Google-Ad-Netzwerk-Referrer: Suchpartner (syndicatedsearch.goog) + Ad-Click-Server → bezahlt, nicht organisch.
+  const googleAdNetwork = /syndicatedsearch\.goog|googleadservices|googlesyndication|doubleclick/.test(h);
 
-  if (paidGoogle || (us.includes("google") && isPaidMedium)) return { key: "google_ads", label: "Google Ads", emoji: "🔵" };
+  if (paidGoogle || googleAdNetwork || (us.includes("google") && isPaidMedium)) return { key: "google_ads", label: "Google Ads", emoji: "🔵" };
   if (a.msclkid || (us.includes("bing") && isPaidMedium)) return { key: "bing_ads", label: "Bing Ads", emoji: "🔵" };
   if (/chatgpt|openai/.test(h)) return { key: "chatgpt", label: "ChatGPT", emoji: "🤖" };
   if (/perplexity/.test(h)) return { key: "perplexity", label: "Perplexity", emoji: "🤖" };
