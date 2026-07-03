@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { dataPath, uploadPath } from "@/lib/data-dir";
+import { deleteAbandoned } from "@/lib/admin/abandoned";
 import { SERVICES } from "@/lib/sauberfit-data";
 import { estimateLead } from "@/lib/ai/estimate";
 import type { Lead } from "@/lib/admin/data";
@@ -99,6 +100,10 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("Lead konnte nicht gespeichert werden:", err);
   }
+
+  // Erfolgreich abgeschickt → evtl. vorhandenen "abgebrochen"-Eintrag dieser Session entfernen.
+  const sid = String(form.get("sid") ?? "").trim();
+  if (/^[a-f0-9-]{8,40}$/i.test(sid)) await deleteAbandoned(sid).catch(() => {});
 
   console.log("📥 Neuer Lead:", { id, service, name, images: imagePaths.length, estimateModel: estimate.model });
   return NextResponse.json({ ok: true, id, estimate });

@@ -6,12 +6,20 @@ import { leadStatus } from "@/lib/admin/data";
 import { readLeads, readOrders } from "@/lib/admin/store";
 import { readInvoices, effectiveStatus, grossCents, monthlyPaidGross } from "@/lib/admin/invoices";
 import { formatEUR, formatDate, relativeTime, initials } from "@/lib/admin/format";
+import { LiveVisitors } from "@/components/admin/LiveVisitors";
+import { getActor, can } from "@/lib/admin/actor";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
-  const [leads, orders, invoices] = await Promise.all([readLeads(), readOrders(), readInvoices()]);
+  const [leads, orders, invoices, actor] = await Promise.all([readLeads(), readOrders(), readInvoices(), getActor()]);
   const now = Date.now();
+
+  // Mitarbeiter sehen nur die Kennzahlen der Bereiche, für die sie Rechte haben.
+  const show = (href: string) => (actor ? can(actor, href) : false);
+  const showMoney = show("/admin/invoices") || show("/admin/finance");
+  const showLeads = show("/admin/leads");
+  const showOrders = show("/admin/auftraege");
 
   // Umsatz aus echten bezahlten Rechnungen (letzte 8 Monate; aktueller vs. Vormonat).
   const series = monthlyPaidGross(invoices, 8);
@@ -33,27 +41,32 @@ export default async function AdminDashboard() {
       <PageHeader
         title="Dashboard"
         subtitle="Überblick über Umsatz, Aufträge und Anfragen"
-        actions={<Link href="/admin/auftraege" className={btn("primary")}><Plus size={16} /> Neuer Auftrag</Link>}
+        actions={showOrders ? <Link href="/admin/auftraege" className={btn("primary")}><Plus size={16} /> Neuer Auftrag</Link> : undefined}
       />
 
+      {/* Live-Besucher: wer ist gerade auf der Website, wer steckt im Angebots-Formular? */}
+      <div className="mb-6">
+        <LiveVisitors />
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Umsatz (Monat)" value={formatEUR(last)} delta={revDelta ? `${revDelta} %` : "bezahlte Rechnungen"} trend="up" icon={Wallet} hint="vs. Vormonat" />
-        <StatCard label="Offene Rechnungen" value={formatEUR(openSum)} delta={`${overdue} überfällig`} trend="down" icon={ReceiptText} hint={`${openInvoices.length} offen`} />
-        <StatCard label="Neue Leads" value={String(leads.length)} delta="Anfragen gesamt" trend="up" icon={Inbox} hint="aus dem Formular" />
-        <StatCard label="Aktive Aufträge" value={String(activeOrders.length)} delta="in Bearbeitung" trend="up" icon={CalendarCheck} hint={`${orders.length} gesamt`} />
+        {showMoney && <StatCard label="Umsatz (Monat)" value={formatEUR(last)} delta={revDelta ? `${revDelta} %` : "bezahlte Rechnungen"} trend="up" icon={Wallet} hint="vs. Vormonat" />}
+        {showMoney && <StatCard label="Offene Rechnungen" value={formatEUR(openSum)} delta={`${overdue} überfällig`} trend="down" icon={ReceiptText} hint={`${openInvoices.length} offen`} />}
+        {showLeads && <StatCard label="Neue Leads" value={String(leads.length)} delta="Anfragen gesamt" trend="up" icon={Inbox} hint="aus dem Formular" />}
+        {showOrders && <StatCard label="Aktive Aufträge" value={String(activeOrders.length)} delta="in Bearbeitung" trend="up" icon={CalendarCheck} hint={`${orders.length} gesamt`} />}
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <Panel
+        {showMoney && <Panel
           title="Umsatzentwicklung"
           subtitle="Bezahlte Rechnungen, letzte 8 Monate"
           className="lg:col-span-2"
           action={revDelta ? <span className="rounded-full bg-[#eef3e7] px-2.5 py-1 text-xs font-semibold text-[#4a7029]">{revDelta} %</span> : null}
         >
           <AreaChart values={series.map((r) => r.gross)} labels={series.map((r) => r.month)} />
-        </Panel>
+        </Panel>}
 
-        <Panel
+        {showLeads && <Panel
           title="Neueste Leads"
           subtitle={`${leads.length} Anfragen`}
           action={<Link href="/admin/leads" className="text-xs font-semibold text-[#4a7029] hover:underline">Alle →</Link>}
@@ -78,10 +91,10 @@ export default async function AdminDashboard() {
               ))}
             </ul>
           )}
-        </Panel>
+        </Panel>}
       </div>
 
-      <div className="mt-6">
+      {showOrders && <div className="mt-6">
         <Panel
           title="Aktuelle Aufträge"
           subtitle="Die zuletzt angelegten Aufträge"
@@ -121,7 +134,7 @@ export default async function AdminDashboard() {
             </div>
           )}
         </Panel>
-      </div>
+      </div>}
     </>
   );
 }

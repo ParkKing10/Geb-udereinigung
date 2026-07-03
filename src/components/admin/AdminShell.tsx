@@ -10,10 +10,19 @@ function isActive(pathname: string, href: string): boolean {
   return href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
 }
 
-export function AdminShell({ children, user }: { children: React.ReactNode; user: { name: string; role: string; initials: string; avatar?: string } }) {
+export function AdminShell({
+  children,
+  user,
+  allowedHrefs,
+}: {
+  children: React.ReactNode;
+  user: { name: string; role: string; initials: string; avatar?: string };
+  allowedHrefs?: string[]; // vom Server-Layout nach Benutzer-Rechten gefiltert
+}) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const current = ADMIN_NAV.find((n) => isActive(pathname, n.href));
+  const nav = allowedHrefs ? ADMIN_NAV.filter((n) => allowedHrefs.includes(n.href)) : ADMIN_NAV;
+  const current = nav.find((n) => isActive(pathname, n.href));
 
   async function logout() {
     await fetch("/api/admin/login", { method: "DELETE" }).catch(() => {});
@@ -44,8 +53,8 @@ export function AdminShell({ children, user }: { children: React.ReactNode; user
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1 px-3 py-2">
-          {ADMIN_NAV.map((item) => {
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
+          {nav.map((item) => {
             const active = isActive(pathname, item.href);
             const Icon = item.icon;
             return (

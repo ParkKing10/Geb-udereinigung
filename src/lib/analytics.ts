@@ -6,6 +6,23 @@ declare global {
   interface Window {
     dataLayer: unknown[];
     gtag?: (...args: unknown[]) => void;
+    __dgdQuote?: { open: boolean; step: number; hasContact: boolean };
+    __dgdPresencePing?: () => void;
+  }
+}
+
+// Stabile anonyme Session-ID (pro Browser-Tab-Sitzung) für Presence + Abbruch-Erfassung.
+export function getSid(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    let sid = sessionStorage.getItem("dgd_sid");
+    if (!sid) {
+      sid = crypto.randomUUID();
+      sessionStorage.setItem("dgd_sid", sid);
+    }
+    return sid;
+  } catch {
+    return "";
   }
 }
 

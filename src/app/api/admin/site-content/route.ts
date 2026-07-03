@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { AUTH_COOKIE, verifySession } from "@/lib/admin/auth";
+import { hasNavAccess } from "@/lib/admin/actor";
 import { getSiteContent, saveSiteContent, type SiteContent } from "@/lib/site-content";
 
 export const runtime = "nodejs";
 
 async function requireAdmin(): Promise<boolean> {
-  const store = await cookies();
-  return verifySession(store.get(AUTH_COOKIE)?.value);
+  return hasNavAccess("/admin/website");
 }
 
 export async function GET() {

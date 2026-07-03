@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { AUTH_COOKIE, verifySession } from "@/lib/admin/auth";
+import { hasNavAccess } from "@/lib/admin/actor";
 import { updateLead, deleteLead } from "@/lib/admin/store";
 import type { AdminOffer, LeadStatus } from "@/lib/admin/data";
 
 export const runtime = "nodejs";
 
+// Leads dürfen von Nutzern mit Leads- ODER CRM-Recht bearbeitet werden
+// (das CRM-Board ändert Lead-Status über dieselbe API).
 async function requireAdmin(): Promise<boolean> {
-  const store = await cookies();
-  return verifySession(store.get(AUTH_COOKIE)?.value);
+  return (await hasNavAccess("/admin/leads")) || (await hasNavAccess("/admin/crm"));
 }
 
 export async function POST(req: Request) {

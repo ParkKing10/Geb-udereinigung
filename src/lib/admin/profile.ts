@@ -83,6 +83,11 @@ export function hashPassword(pw: string): string {
   return `scrypt$${salt.toString("base64")}$${hash.toString("base64")}`;
 }
 
+// Auch von der Benutzerverwaltung (users.ts) genutzt.
+export function verifyPasswordHash(pw: string, stored: string): boolean {
+  return verifyHash(pw, stored);
+}
+
 function verifyHash(pw: string, stored: string): boolean {
   const [algo, saltB64, hashB64] = stored.split("$");
   if (algo !== "scrypt" || !saltB64 || !hashB64) return false;

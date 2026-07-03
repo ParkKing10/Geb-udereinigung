@@ -10,6 +10,8 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [stage, setStage] = useState<"password" | "2fa">("password");
+  const [staff, setStaff] = useState(false); // Mitarbeiter-Login (E-Mail + Passwort)
+  const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -21,7 +23,7 @@ export function LoginForm() {
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ password, code: stage === "2fa" ? code : undefined }),
+        body: JSON.stringify({ password, code: stage === "2fa" ? code : undefined, email: staff ? email : undefined }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
@@ -54,6 +56,19 @@ export function LoginForm() {
 
         <form onSubmit={submit} className="space-y-3">
           {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700 ring-1 ring-inset ring-rose-200">{error}</p>}
+          {staff && stage === "password" && (
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-neutral-500">E-Mail</span>
+              <input
+                type="email"
+                autoComplete="username"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@firma.de"
+                className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm outline-none focus:border-[#5d8a34] focus:bg-white"
+              />
+            </label>
+          )}
           {stage === "password" ? (
             <label className="block">
               <span className="mb-1 block text-xs font-medium text-neutral-500">Passwort</span>
@@ -98,7 +113,14 @@ export function LoginForm() {
           </button>
         </form>
 
-        <p className="mt-5 text-center text-xs text-neutral-400">Geschützter Bereich · Zugriff nur für Mitarbeitende</p>
+        <button
+          type="button"
+          onClick={() => { setStaff(!staff); setError(null); setStage("password"); }}
+          className="mt-4 w-full text-center text-xs font-medium text-[#5d8a34] hover:underline"
+        >
+          {staff ? "← Als Inhaber anmelden" : "Als Mitarbeiter anmelden →"}
+        </button>
+        <p className="mt-3 text-center text-xs text-neutral-400">Geschützter Bereich · Zugriff nur für Mitarbeitende</p>
       </div>
     </div>
   );

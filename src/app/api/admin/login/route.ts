@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSession, AUTH_COOKIE, SESSION_MAX_AGE } from "@/lib/admin/auth";
 import { verifyAdminPassword, isLoginConfigured, is2faEnabled, verifySecondFactor, readProfile } from "@/lib/admin/profile";
+import { verifyUser } from "@/lib/admin/users";
 import { readAccounts } from "@/lib/email/store";
 import { sendMail } from "@/lib/email/send";
 
@@ -34,6 +35,24 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const password = body?.password ? String(body.password) : "";
   const code = body?.code ? String(body.code) : "";
+  const email = body?.email ? String(body.email).trim() : "";
+
+  // Mitarbeiter-Login (E-Mail + Passwort, Rechte aus users.json; ohne 2FA).
+  if (email) {
+    const user = await verifyUser(email, password);
+    if (!user) return NextResponse.json({ error: "E-Mail oder Passwort falsch." }, { status: 401 });
+    const token = await createSession(`user:${user.id}`);
+    const res = NextResponse.json({ ok: true });
+    res.cookies.set(AUTH_COOKIE, token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: SESSION_MAX_AGE,
+    });
+    void sendLoginAlert(req);
+    return res;
+  }
 
   if (!(await isLoginConfigured())) {
     return NextResponse.json({ error: "Server nicht konfiguriert (ADMIN_PASSWORD fehlt)." }, { status: 500 });

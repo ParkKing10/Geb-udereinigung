@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { AUTH_COOKIE, verifySession } from "@/lib/admin/auth";
+import { hasNavAccess } from "@/lib/admin/actor";
 import { readSafeProfile, saveProfileData, changePassword } from "@/lib/admin/profile";
 
 export const runtime = "nodejs";
 
+// Inhaber-Profil (Passwort/2FA) – für Mitarbeiter tabu.
 async function authed(): Promise<boolean> {
-  const store = await cookies();
-  return verifySession(store.get(AUTH_COOKIE)?.value);
+  return hasNavAccess("owner");
 }
 
 export async function GET() {

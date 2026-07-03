@@ -63,6 +63,9 @@ app-settings.json
 legal-content.json
 # Admin-Profil – enthält Passwort-Hash, 2FA-Secret & Backup-Code-Hashes!
 admin-profile.json
+# Mitarbeiter-Benutzer (Passwort-Hashes) + abgebrochene Anfragen (PII)
+users.json
+abandoned-leads.json
 # E-Mail-Postfächer – enthalten KLARTEXT-Passwörter!
 email-accounts.json
 email-messages.json

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { AUTH_COOKIE, verifySession } from "@/lib/admin/auth";
+import { hasNavAccess } from "@/lib/admin/actor";
 import { getAccount, addInboundBatch } from "@/lib/email/store";
 import { fetchInbox } from "@/lib/email/fetch";
 
@@ -8,8 +7,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  const store = await cookies();
-  if (!(await verifySession(store.get(AUTH_COOKIE)?.value))) {
+  if (!(await hasNavAccess("/admin/email"))) {
     return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as { accountId?: string } | null;

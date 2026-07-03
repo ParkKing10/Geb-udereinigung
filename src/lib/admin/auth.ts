@@ -44,22 +44,31 @@ function safeEqual(a: string, b: string): boolean {
 
 export const SESSION_MAX_AGE = 7 * 24 * 60 * 60; // Sekunden
 
-export async function createSession(days = 7): Promise<string> {
-  const payload = strToB64url(JSON.stringify({ sub: "admin", exp: Date.now() + days * DAY_MS }));
+export type SessionPayload = { sub: string; exp: number };
+
+// sub: "admin" (Inhaber) oder "user:<id>" (Mitarbeiter aus users.json).
+export async function createSession(sub = "admin", days = 7): Promise<string> {
+  const payload = strToB64url(JSON.stringify({ sub, exp: Date.now() + days * DAY_MS }));
   const sig = await hmac(payload);
   return `${payload}.${sig}`;
 }
 
-export async function verifySession(token?: string | null): Promise<boolean> {
-  if (!token) return false;
+// Signatur + Ablauf prüfen und Payload zurückgeben (null = ungültig/abgelaufen).
+export async function readSession(token?: string | null): Promise<SessionPayload | null> {
+  if (!token) return null;
   const [payload, sig] = token.split(".");
-  if (!payload || !sig) return false;
+  if (!payload || !sig) return null;
   const expected = await hmac(payload);
-  if (!safeEqual(sig, expected)) return false;
+  if (!safeEqual(sig, expected)) return null;
   try {
-    const { exp } = JSON.parse(b64urlToStr(payload));
-    return typeof exp === "number" && exp > Date.now();
+    const data = JSON.parse(b64urlToStr(payload)) as Partial<SessionPayload>;
+    if (typeof data.exp !== "number" || data.exp <= Date.now()) return null;
+    return { sub: typeof data.sub === "string" ? data.sub : "admin", exp: data.exp };
   } catch {
-    return false;
+    return null;
   }
+}
+
+export async function verifySession(token?: string | null): Promise<boolean> {
+  return (await readSession(token)) !== null;
 }

@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { AUTH_COOKIE, verifySession } from "@/lib/admin/auth";
+import { hasNavAccess } from "@/lib/admin/actor";
 import { readInvoices, createInvoice, updateInvoice, deleteInvoice, type Invoice } from "@/lib/admin/invoices";
 import { getOrder } from "@/lib/admin/store";
 
 export const runtime = "nodejs";
 
 async function ok(): Promise<boolean> {
-  const store = await cookies();
-  return verifySession(store.get(AUTH_COOKIE)?.value);
+  return hasNavAccess("/admin/invoices");
 }
 
 export async function GET() {

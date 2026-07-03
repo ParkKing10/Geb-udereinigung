@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { promises as fs } from "node:fs";
 import { randomBytes } from "node:crypto";
 import path from "node:path";
 import { uploadPath } from "@/lib/data-dir";
-import { AUTH_COOKIE, verifySession } from "@/lib/admin/auth";
+import { hasNavAccess } from "@/lib/admin/actor";
 
 export const runtime = "nodejs";
 
@@ -13,8 +12,7 @@ const ALLOWED: Record<string, string> = { "image/png": "png", "image/webp": "web
 const MAX_BYTES = 3 * 1024 * 1024;
 
 export async function POST(req: Request) {
-  const store = await cookies();
-  if (!(await verifySession(store.get(AUTH_COOKIE)?.value))) {
+  if (!(await hasNavAccess("/admin/email"))) {
     return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
   }
   const form = await req.formData();

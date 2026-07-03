@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { AUTH_COOKIE, verifySession } from "@/lib/admin/auth";
+import { hasNavAccess } from "@/lib/admin/actor";
 import { getAccount, getSignature, addMessage } from "@/lib/email/store";
 import { sendMail, buildBody } from "@/lib/email/send";
 
@@ -9,8 +8,7 @@ export const runtime = "nodejs";
 type SendBody = { accountId?: string; to?: string; subject?: string; html?: string; signatureId?: string | null };
 
 export async function POST(req: Request) {
-  const store = await cookies();
-  if (!(await verifySession(store.get(AUTH_COOKIE)?.value))) {
+  if (!(await hasNavAccess("/admin/email"))) {
     return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as SendBody | null;

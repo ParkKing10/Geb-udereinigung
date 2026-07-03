@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { AUTH_COOKIE, verifySession } from "@/lib/admin/auth";
+import { hasNavAccess } from "@/lib/admin/actor";
 import { readPosts, readConfig, saveConfig, savePost, type BlogConfig } from "@/lib/blog/store";
 import { generateBlog } from "@/lib/blog/generate";
 
@@ -9,8 +8,7 @@ export const runtime = "nodejs";
 export const maxDuration = 90;
 
 async function requireAdmin(): Promise<boolean> {
-  const store = await cookies();
-  return verifySession(store.get(AUTH_COOKIE)?.value);
+  return hasNavAccess("/admin/blog");
 }
 
 export async function GET() {

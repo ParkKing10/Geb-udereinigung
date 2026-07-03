@@ -1,12 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import Image from "next/image";
 import { X, ArrowRight, ArrowLeft, Check, Sparkles, ShieldCheck, ImagePlus, Trash2, Plus, ChevronUp } from "lucide-react";
 import { SERVICES } from "@/lib/sauberfit-data";
 import type { ContactPerson } from "@/lib/site-content";
-import { trackQuoteOpen, trackQuoteStep, trackLead, leadValue } from "@/lib/analytics";
-import { appendAttribution } from "@/lib/attribution";
+import { trackQuoteOpen, trackQuoteStep, trackLead, leadValue, getSid } from "@/lib/analytics";
+import { appendAttribution, getAttribution } from "@/lib/attribution";
 
 const STEP_NAMES = ["Leistung", "Objekt", "Kontakt"];
 
@@ -71,6 +71,48 @@ export function LeadProvider({ children, person }: { children: React.ReactNode; 
     setFiles([]);
   }
 
+  const hasContact = /\S+@\S+\.\S+/.test(form.email) || form.phone.replace(/\D/g, "").length >= 6;
+
+  // Live-Formular-Status fürs Admin-Dashboard melden (anonym: offen/Schritt/Kontakt-ja-nein).
+  useEffect(() => {
+    window.__dgdQuote = { open: isOpen && !done, step, hasContact };
+    window.__dgdPresencePing?.();
+  }, [isOpen, step, hasContact, done]);
+
+  // Abbruch-Erfassung: Sobald E-Mail ODER Handynummer eingetippt ist (und noch nicht
+  // abgeschickt wurde), Zwischenstand debounced speichern. Beim erfolgreichen Absenden
+  // löscht /api/lead den Eintrag serverseitig wieder (per sid).
+  useEffect(() => {
+    if (done || !hasContact) return;
+    const t = window.setTimeout(() => {
+      const sid = getSid();
+      if (!sid) return;
+      const a = getAttribution();
+      const p = new URLSearchParams(window.location.search);
+      const attribution: Record<string, string> = {};
+      if (a.gclid) attribution.gclid = a.gclid;
+      if (a.gbraid) attribution.gbraid = a.gbraid;
+      if (a.wbraid) attribution.wbraid = a.wbraid;
+      for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_term"]) {
+        const v = p.get(k);
+        if (v) attribution[k] = v;
+      }
+      if (document.referrer) attribution.referrer = document.referrer.slice(0, 300);
+      const body = JSON.stringify({
+        sid, step,
+        service: form.service, location: form.location, objektart: form.objektart,
+        areaSqm: form.areaSqm, turnus: form.turnus, firma: form.firma,
+        name: form.name, email: form.email, phone: form.phone,
+        attribution,
+      });
+      try {
+        if (navigator.sendBeacon) navigator.sendBeacon("/api/abandoned", new Blob([body], { type: "application/json" }));
+        else fetch("/api/abandoned", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
+      } catch { /* darf nie stören */ }
+    }, 1200);
+    return () => window.clearTimeout(t);
+  }, [form, step, done, hasContact]);
+
   function open(service?: string) {
     setForm({ ...EMPTY, service: service ?? "" });
     resetImages();
@@ -134,6 +176,7 @@ export function LeadProvider({ children, person }: { children: React.ReactNode; 
       (Object.keys(form) as (keyof Form)[]).forEach((k) => fd.append(k, form[k]));
       files.forEach((f) => fd.append("images", f));
       appendAttribution(fd);
+      fd.append("sid", getSid()); // löscht nach Erfolg den evtl. vorhandenen Abbruch-Eintrag
       const res = await fetch("/api/lead", { method: "POST", body: fd });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));

@@ -4,7 +4,7 @@ import { Suspense, useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { GoogleTag } from "./GoogleTag";
 import { ConsentBanner } from "./ConsentBanner";
-import { track, trackCall, trackEmailClick, gaId, setRuntimeTracking } from "@/lib/analytics";
+import { track, trackCall, trackEmailClick, gaId, setRuntimeTracking, getSid } from "@/lib/analytics";
 import type { TrackingSettings } from "@/lib/admin/app-settings";
 import { captureAttribution, getAttribution } from "@/lib/attribution";
 
@@ -63,6 +63,36 @@ function PageViews() {
   return null;
 }
 
+// Live-Präsenz-Beacon: meldet alle 15 s (und bei Routen-/Formularwechsel) anonym
+// "bin da + auf welcher Seite + Formular-Schritt" ans Admin-Dashboard.
+function PresenceBeacon() {
+  const pathname = usePathname();
+  useEffect(() => {
+    const send = () => {
+      const sid = getSid();
+      if (!sid) return;
+      const body = JSON.stringify({ sid, path: window.location.pathname, quote: window.__dgdQuote ?? null });
+      try {
+        if (navigator.sendBeacon) navigator.sendBeacon("/api/presence", new Blob([body], { type: "application/json" }));
+        else fetch("/api/presence", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
+      } catch {
+        /* Presence darf nie stören */
+      }
+    };
+    window.__dgdPresencePing = send;
+    send();
+    const iv = window.setInterval(send, 15_000);
+    const onVis = () => { if (document.visibilityState === "visible") send(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.clearInterval(iv);
+      document.removeEventListener("visibilitychange", onVis);
+      if (window.__dgdPresencePing === send) delete window.__dgdPresencePing;
+    };
+  }, [pathname]);
+  return null;
+}
+
 // Delegiertes Klick-Tracking für Telefon-/E-Mail-/WhatsApp-Links (überall, auch in Server-Komponenten gerendert).
 function useLinkTracking() {
   useEffect(() => {
@@ -96,6 +126,9 @@ export function Analytics({ tracking }: { tracking?: TrackingSettings }) {
       <ConsentBanner />
       <Suspense fallback={null}>
         <PageViews />
+      </Suspense>
+      <Suspense fallback={null}>
+        <PresenceBeacon />
       </Suspense>
     </>
   );

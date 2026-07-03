@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { AUTH_COOKIE, verifySession } from "@/lib/admin/auth";
+import { hasNavAccess } from "@/lib/admin/actor";
 import { composeEmail, type ComposeInput } from "@/lib/email/generate";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  const store = await cookies();
-  if (!(await verifySession(store.get(AUTH_COOKIE)?.value))) {
+  if (!(await hasNavAccess("/admin/email"))) {
     return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as ComposeInput | null;
