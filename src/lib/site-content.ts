@@ -71,7 +71,7 @@ export const DEFAULT_CONTENT: SiteContent = {
     lastName: "Christian",
     position: "Ihr persönlicher Objektberater",
     phone: "+49 152 07306840",
-    email: "info@deutschegebäudedienste.de",
+    email: "info@dgd-facility.de",
     photo: "/images/ansprechpartner.jpg",
     available: true,
     statusLabel: "Heute erreichbar",

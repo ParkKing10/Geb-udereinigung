@@ -55,8 +55,8 @@ export const BRAND = {
 export const CONTACT = {
   phone: "+49 152 07306840",
   hours: "Mo – Fr: 8:00 – 18:00 Uhr",
-  email: "info@deutschegebäudedienste.de",
-  web: "www.deutschegebäudedienste.de",
+  email: "info@dgd-facility.de",
+  web: "dgd-facility.de",
   address: ["Deutsche Gebäudedienste", "Rellinger Weg 24", "22457 Hamburg"],
 };
 

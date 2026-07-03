@@ -98,7 +98,7 @@ export function EmailAccounts({ accounts, signatures, onChange }: { accounts: Sa
           <label className="block"><span className={label}>Interner Name</span><input className={field} value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} placeholder="z. B. Info-Postfach" /></label>
           <label className="block"><span className={label}>Angezeigter Absendername</span><input className={field} value={draft.fromName} onChange={(e) => setDraft({ ...draft, fromName: e.target.value })} placeholder="Deutsche Gebäudedienste" /></label>
         </div>
-        <label className="block"><span className={label}>E-Mail-Adresse</span><input className={field} value={draft.address} onChange={(e) => setDraft({ ...draft, address: e.target.value })} placeholder="info@deutschegebäudedienste.de" /></label>
+        <label className="block"><span className={label}>E-Mail-Adresse</span><input className={field} value={draft.address} onChange={(e) => setDraft({ ...draft, address: e.target.value })} placeholder="info@dgd-facility.de" /></label>
 
         <div>
           <span className={label}>Schnellauswahl</span>
