@@ -49,9 +49,7 @@ export function SettingsHub({ initial }: { initial: SafeAppSettings }) {
   const [hasKey, setHasKey] = useState(initial.ai.hasKey);
   const [aiSaving, setAiSaving] = useState(false); const [aiSaved, setAiSaved] = useState(false);
 
-  const [poToken, setPoToken] = useState("");
-  const [poUser, setPoUser] = useState("");
-  const [hasPushover, setHasPushover] = useState(initial.notify.hasPushover);
+  const [notifyEmail, setNotifyEmail] = useState(initial.notify.notifyEmail);
   const [poSaving, setPoSaving] = useState(false); const [poSaved, setPoSaved] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
@@ -88,12 +86,10 @@ export function SettingsHub({ initial }: { initial: SafeAppSettings }) {
     try {
       const res = await fetch("/api/admin/app-settings", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ notify: { ...(poToken ? { pushoverToken: poToken } : {}), ...(poUser ? { pushoverUser: poUser } : {}) } }),
+        body: JSON.stringify({ notify: { notifyEmail } }),
       });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || "Fehler");
-      setHasPushover(j.notify?.hasPushover ?? hasPushover);
-      setPoToken(""); setPoUser("");
       setPoSaved(true);
     } catch (e) { setError(e instanceof Error ? e.message : "Fehler"); } finally { setPoSaving(false); }
   }
@@ -145,18 +141,18 @@ export function SettingsHub({ initial }: { initial: SafeAppSettings }) {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        {/* Lead-Push via Pushover */}
-        <Card icon={BellRing} title="Lead-Benachrichtigung (Pushover)" hint="Bei jedem neuen Lead sofort ein Push aufs Handy: „New Lead Alert“ mit Name & Nummer.">
+        {/* Lead-Benachrichtigung via Pushover-E-Mail-Gateway */}
+        <Card icon={BellRing} title="Lead-Benachrichtigung (Pushover)" hint="Bei jedem neuen Lead geht eine Mail an deine Pushover-Adresse – kommt als Push aufs Handy an.">
           <div className="space-y-3">
             <label className="block">
-              <span className={lbl}>API-Token {hasPushover && <span className="text-[#5d8a34]">· eingerichtet</span>}</span>
-              <input type="password" className={field} value={poToken} onChange={(e) => setPoToken(e.target.value)} placeholder={hasPushover ? "•••••••• (unverändert lassen)" : "Pushover App-Token"} />
+              <span className={lbl}>Pushover-E-Mail-Adresse {notifyEmail && <span className="text-[#5d8a34]">· aktiv</span>}</span>
+              <input type="email" className={field} value={notifyEmail} onChange={(e) => setNotifyEmail(e.target.value)} placeholder="xxxxxxxxxx@pomail.net" />
             </label>
-            <label className="block">
-              <span className={lbl}>User-Key</span>
-              <input type="password" className={field} value={poUser} onChange={(e) => setPoUser(e.target.value)} placeholder={hasPushover ? "•••••••• (unverändert lassen)" : "steht auf pushover.net oben („Your User Key“)"} />
-            </label>
-            <p className="text-xs text-neutral-400">Beide Werte werden sicher gespeichert und nie im Klartext zurückgegeben. Push kommt mit hoher Priorität + Kassenklingel-Ton. 💰</p>
+            <p className="text-xs text-neutral-400">
+              Die Adresse findest du in der Pushover-App unter deinem Gerät („E-Mail-Alias“). Inhalt des Push:
+              „New Lead Alert – Customer, Number, Company“. Versand läuft über dein Standard-Postfach (Menü E-Mails) –
+              das muss eingerichtet sein. Feld leeren = Benachrichtigung aus.
+            </p>
             <div className="flex justify-end">
               <button onClick={savePushover} disabled={poSaving} className="inline-flex items-center gap-2 rounded-lg bg-[#16241a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0f1c14] disabled:opacity-60">
                 {poSaving ? <Loader2 size={15} className="animate-spin" /> : poSaved ? <Check size={15} /> : <Save size={15} />} {poSaved ? "Gespeichert" : "Speichern"}

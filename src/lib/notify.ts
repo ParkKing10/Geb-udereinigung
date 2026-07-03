@@ -1,37 +1,30 @@
-// Push-Benachrichtigung bei neuem Lead via Pushover (https://pushover.net/api).
-// Token + User-Key werden im Admin unter Settings gepflegt (app-settings, DATA_DIR)
-// oder per ENV (PUSHOVER_TOKEN / PUSHOVER_USER). Fire-and-forget: Ein Fehler hier
-// darf die Lead-Annahme NIEMALS blockieren.
-import { pushoverConfig } from "@/lib/admin/app-settings";
-
-const PUSHOVER_URL = "https://api.pushover.net/1/messages.json";
-const TIMEOUT_MS = 6000;
+// Lead-Benachrichtigung per E-Mail an die Pushover-Gateway-Adresse (…@pomail.net):
+// Pushover stellt eingehende Mails als Push zu (Betreff = Titel, Text = Nachricht).
+// Versand über das Standard-Postfach aus dem E-Mails-Modul. Fire-and-forget:
+// Ein Fehler hier darf die Lead-Annahme NIEMALS blockieren.
+import { leadNotifyEmail } from "@/lib/admin/app-settings";
+import { readAccounts } from "@/lib/email/store";
+import { sendMail } from "@/lib/email/send";
 
 export async function sendLeadAlert(input: { name: string; phone: string }): Promise<void> {
   try {
-    const { pushoverToken, pushoverUser } = await pushoverConfig();
-    if (!pushoverToken || !pushoverUser) return; // nicht konfiguriert → still überspringen
+    const to = await leadNotifyEmail();
+    if (!to || !/\S+@\S+\.\S+/.test(to)) return; // nicht konfiguriert → still überspringen
 
-    const body = new URLSearchParams({
-      token: pushoverToken,
-      user: pushoverUser,
-      title: "New Lead Alert",
-      message: `Customer: ${input.name}\nNumber: ${input.phone}\nCompany: Deutsche Gebäudedienste`,
-      priority: "1", // hohe Priorität: umgeht Ruhezeiten-Standard, kein Bestätigungszwang
-      sound: "cashregister",
-    });
-
-    const res = await fetch(PUSHOVER_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: body.toString(),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
-    if (!res.ok) {
-      const detail = await res.text().catch(() => "");
-      console.error("Pushover-Benachrichtigung fehlgeschlagen:", res.status, detail.slice(0, 200));
+    const accounts = await readAccounts();
+    const acc = accounts.find((a) => a.isDefault) ?? accounts[0];
+    if (!acc?.smtpHost) {
+      console.error("Lead-Benachrichtigung: kein SMTP-Postfach konfiguriert (Admin → E-Mails).");
+      return;
     }
+
+    // Pushover nutzt den Text-Teil; buildBody in sendMail wandelt <br> in Zeilenumbrüche.
+    await sendMail(acc, {
+      to,
+      subject: "New Lead Alert",
+      html: `Customer: ${input.name}<br>Number: ${input.phone}<br>Company: Deutsche Gebäudedienste`,
+    });
   } catch (err) {
-    console.error("Pushover-Benachrichtigung fehlgeschlagen:", err instanceof Error ? err.message : err);
+    console.error("Lead-Benachrichtigung fehlgeschlagen:", err instanceof Error ? err.message : err);
   }
 }

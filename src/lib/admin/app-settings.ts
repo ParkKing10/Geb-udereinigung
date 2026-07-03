@@ -17,10 +17,10 @@ export type AiSettings = {
   model: string;
 };
 
-// Push-Benachrichtigungen bei neuen Leads (Pushover.net).
+// Lead-Benachrichtigung: E-Mail an die Pushover-Gateway-Adresse (…@pomail.net),
+// Pushover stellt sie als Push zu. Versand über das Standard-Postfach (E-Mails-Modul).
 export type NotifySettings = {
-  pushoverToken: string; // App-Token (Geheimnis)
-  pushoverUser: string; // User-Key des Empfängers (Geheimnis)
+  notifyEmail: string; // Empfänger, z. B. xxxxxx@pomail.net (nicht öffentlich machen → Spam-Schutz)
 };
 
 export type AppSettings = {
@@ -29,11 +29,12 @@ export type AppSettings = {
   notify: NotifySettings;
 };
 
-// Client-sichere Variante (Keys redigiert).
+// Client-sichere Variante (Keys redigiert; die Benachrichtigungs-Adresse ist
+// nur im Admin sichtbar – das ist okay).
 export type SafeAppSettings = {
   tracking: TrackingSettings;
   ai: { hasKey: boolean; model: string };
-  notify: { hasPushover: boolean };
+  notify: NotifySettings;
 };
 
 const FILE = "app-settings.json";
@@ -52,8 +53,7 @@ function envDefaults(): AppSettings {
       model: process.env.ANTHROPIC_MODEL?.trim() || "claude-sonnet-4-6",
     },
     notify: {
-      pushoverToken: process.env.PUSHOVER_TOKEN?.trim() || "",
-      pushoverUser: process.env.PUSHOVER_USER?.trim() || "",
+      notifyEmail: process.env.LEAD_NOTIFY_EMAIL?.trim() || "",
     },
   };
 }
@@ -83,8 +83,7 @@ export async function readAppSettings(): Promise<AppSettings> {
       model: saved.ai?.model || env.ai.model,
     },
     notify: {
-      pushoverToken: saved.notify?.pushoverToken || env.notify.pushoverToken,
-      pushoverUser: saved.notify?.pushoverUser || env.notify.pushoverUser,
+      notifyEmail: saved.notify?.notifyEmail ?? env.notify.notifyEmail,
     },
   };
 }
@@ -94,7 +93,7 @@ export async function readSafeAppSettings(): Promise<SafeAppSettings> {
   return {
     tracking: s.tracking,
     ai: { hasKey: Boolean(s.ai.anthropicKey), model: s.ai.model },
-    notify: { hasPushover: Boolean(s.notify.pushoverToken && s.notify.pushoverUser) },
+    notify: s.notify,
   };
 }
 
@@ -119,15 +118,15 @@ export async function anthropicConfig(): Promise<{ key: string; model: string }>
   return { key: s.ai.anthropicKey, model: s.ai.model };
 }
 
-// Server-seitig für Lead-Push-Benachrichtigungen (siehe lib/notify.ts).
-export async function pushoverConfig(): Promise<NotifySettings> {
-  return (await readAppSettings()).notify;
+// Server-seitig für Lead-Benachrichtigungen (siehe lib/notify.ts).
+export async function leadNotifyEmail(): Promise<string> {
+  return (await readAppSettings()).notify.notifyEmail;
 }
 
 type SavePatch = {
   tracking?: Partial<TrackingSettings>;
   ai?: Partial<AiSettings>; // anthropicKey nur überschreiben, wenn nicht-leer (leer = behalten)
-  notify?: Partial<NotifySettings>; // dito für Pushover-Token/User-Key
+  notify?: Partial<NotifySettings>; // notifyEmail darf auch geleert werden (= Benachrichtigung aus)
 };
 
 export async function saveAppSettings(patch: SavePatch): Promise<SafeAppSettings> {
@@ -140,14 +139,13 @@ export async function saveAppSettings(patch: SavePatch): Promise<SafeAppSettings
       anthropicKey: patch.ai?.anthropicKey ? patch.ai.anthropicKey : cur.ai.anthropicKey,
     },
     notify: {
-      pushoverToken: patch.notify?.pushoverToken ? patch.notify.pushoverToken.trim() : cur.notify.pushoverToken,
-      pushoverUser: patch.notify?.pushoverUser ? patch.notify.pushoverUser.trim() : cur.notify.pushoverUser,
+      notifyEmail: patch.notify?.notifyEmail !== undefined ? patch.notify.notifyEmail.trim() : cur.notify.notifyEmail,
     },
   };
   await fs.writeFile(dataPath(FILE), JSON.stringify(next, null, 2), "utf8");
   return {
     tracking: next.tracking,
     ai: { hasKey: Boolean(next.ai.anthropicKey), model: next.ai.model },
-    notify: { hasPushover: Boolean(next.notify.pushoverToken && next.notify.pushoverUser) },
+    notify: next.notify,
   };
 }
