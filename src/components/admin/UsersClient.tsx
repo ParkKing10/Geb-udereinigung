@@ -193,7 +193,11 @@ export function UsersClient({ users }: { users: SafeUser[] }) {
         )}
       </section>
       <p className="text-xs text-neutral-400">
-        Mitarbeiter melden sich unter <span className="font-mono">/login</span> über „Als Mitarbeiter anmelden" mit E-Mail + Passwort an.
+        Mitarbeiter melden sich unter{" "}
+        <a href="/login" target="_blank" rel="noreferrer" className="font-mono font-semibold text-[#5d8a34] underline hover:text-[#4a7029]">
+          /login
+        </a>{" "}
+        über „Als Mitarbeiter anmelden" mit E-Mail + Passwort an.
         Dashboard ist immer sichtbar; Benutzerverwaltung, Profil &amp; Inhaber-Einstellungen bleiben dir vorbehalten.
         Deaktivieren sperrt den Zugang sofort.
       </p>
