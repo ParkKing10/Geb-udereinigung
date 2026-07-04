@@ -47,16 +47,17 @@ export async function POST(req: Request) {
     .filter(([, v]) => v)
     .map(([label, value]) => ({ label, value }));
 
-  // Rückruf-Shortcut ("Lieber anrufen lassen?"): nur die Handynummer ist Pflicht.
+  // Kontakt-zuerst: Name + Telefon reichen für einen Lead – Leistung, Ort & Objektdaten
+  // klären wir telefonisch. Der Rückruf-Shortcut ("quick") braucht sogar nur die Nummer.
   const quick = String(form.get("quick") ?? "") === "1";
   if (quick) {
     if (!phone) return NextResponse.json({ error: "Bitte Handynummer angeben." }, { status: 400 });
-  } else if (!service || !location || !name || !phone || !email) {
-    return NextResponse.json({ error: "Bitte Leistung, Ort, Name, Handynummer und E-Mail angeben." }, { status: 400 });
+  } else if (!name || !phone) {
+    return NextResponse.json({ error: "Bitte Name und Telefonnummer angeben." }, { status: 400 });
   }
 
   const leadName = name || (quick ? "Rückruf erbeten" : name);
-  const leadLocation = location || (quick ? "—" : location);
+  const leadLocation = location || "—";
   const leadBesonderheiten = quick
     ? ["⚡ Schnell-Anfrage: Rückruf gewünscht", besonderheiten].filter(Boolean).join(" · ")
     : besonderheiten;
@@ -92,9 +93,10 @@ export async function POST(req: Request) {
     }
   }
 
-  // KI-Schätzung berechnen (Anthropic-Vision oder Heuristik-Fallback). Beim Rückruf-
-  // Shortcut übersprungen – da liegen keine Objektdaten vor.
-  const estimate = quick
+  // KI-Schätzung nur, wenn Objektdaten vorliegen (Bilder, Fläche oder Objektart).
+  // Kontakt-zuerst-/Rückruf-Anfragen liefern die nicht – dort telefonisch klären.
+  const hasObjektData = aiImages.length > 0 || !!areaSqm || !!objektart;
+  const estimate = quick || !hasObjektData
     ? null
     : await estimateLead({ service, serviceName, location, images: aiImages, areaSqm, objektart, verschmutzung, turnus, besonderheiten, details });
 
