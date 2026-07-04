@@ -46,13 +46,14 @@ function CountUp({ value, run }: { value: string; run: boolean }) {
 }
 
 // Google-Bewertung (steht ganz oben, wo vorher das Badge war).
-export function HeroGoogle({ google }: { google: { rating: string; count: string } }) {
+export function HeroGoogle({ google, showCount = false }: { google: { rating: string; count: string }; showCount?: boolean }) {
   return (
     <div className="sf-grating sf-grating-top">
       <span className="g"><GoogleG size={24} /></span>
       <span className="t">
         <b>{google.rating} <span className="sf-stars">★★★★★</span></b>
       </span>
+      {showCount && google.count && <span className="sf-grating-count">aus {google.count} Bewertungen</span>}
     </div>
   );
 }
