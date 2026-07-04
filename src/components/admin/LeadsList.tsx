@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, Mail, Phone, Camera, Trash2, Loader2 } from "lucide-react";
+import { Search, Mail, Phone, Camera, Trash2, Loader2, Zap } from "lucide-react";
 import type { Lead, LeadStatus } from "@/lib/admin/data";
 import { deriveSource } from "@/lib/marketing/source";
 import { getService } from "@/lib/sauberfit-data";
@@ -95,6 +95,11 @@ export function LeadsList({ leads }: { leads: Lead[] }) {
                   <div className="flex items-center gap-2.5">
                     <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#eef3e7] text-[11px] font-bold text-[#4a7029]">{initials(l.name)}</span>
                     <Link href={`/admin/leads/${l.id}`} className="font-medium text-neutral-900 hover:text-[#4a7029] hover:underline">{l.name}</Link>
+                    {/schnell-?anfrage|rückruf gewünscht/i.test(l.besonderheiten ?? "") && (
+                      <span className="inline-flex items-center gap-0.5 whitespace-nowrap rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700" title="Schnellanfrage – nur zurückrufen, keine Objektdaten">
+                        <Zap size={11} /> Rückruf
+                      </span>
+                    )}
                     {l.images && l.images.length > 0 && (
                       <span className="inline-flex items-center gap-0.5 rounded-full bg-neutral-100 px-1.5 py-0.5 text-[10px] font-semibold text-neutral-500" title={`${l.images.length} Foto(s)`}><Camera size={11} /> {l.images.length}</span>
                     )}
