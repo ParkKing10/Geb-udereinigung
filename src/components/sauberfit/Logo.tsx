@@ -9,7 +9,6 @@ export function Logo() {
           Deutsche<br />
           Gebäudedienste
         </b>
-        <span>Gebäudereinigung</span>
       </span>
     </span>
   );
