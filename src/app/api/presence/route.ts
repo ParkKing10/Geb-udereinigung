@@ -32,6 +32,9 @@ export async function POST(req: Request) {
   // Herkunft ableiten (Google Ads / Google / Bing / Social / Referral / Direct).
   const t = body?.touch && typeof body.touch === "object" ? body.touch : {};
   const src = deriveSource({
+    gclid: S(t.gclid, 120),
+    gbraid: S(t.gbraid, 120),
+    wbraid: S(t.wbraid, 120),
     utm_source: S(t.utm_source, 100),
     utm_medium: S(t.utm_medium, 100),
     referrer: S(t.referrer, 200),

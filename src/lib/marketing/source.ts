@@ -21,8 +21,11 @@ export function deriveSource(a: SourceInput): SourceInfo {
   const um = (a.utm_medium || "").toLowerCase();
   const h = host((a.referrer || "").toLowerCase()) || us;
   const isPaidMedium = um.includes("cpc") || um.includes("ppc") || um.includes("paid");
+  // Referrer, die eindeutig aus Google Ads stammen (Display-Safeframe, DoubleClick-
+  // Ad-Server, Suchpartner-Netzwerk) – auch ohne gclid als Google Ads werten.
+  const googleAdsRef = /googlesyndication\.com|doubleclick\.net|syndicatedsearch\.goog/.test(h);
 
-  if (paidGoogle || (us.includes("google") && isPaidMedium)) return { key: "google_ads", label: "Google Ads", emoji: "🔵" };
+  if (paidGoogle || googleAdsRef || (us.includes("google") && isPaidMedium)) return { key: "google_ads", label: "Google Ads", emoji: "🔵" };
   if (a.msclkid || (us.includes("bing") && isPaidMedium)) return { key: "bing_ads", label: "Bing Ads", emoji: "🔵" };
   if (/chatgpt|openai/.test(h)) return { key: "chatgpt", label: "ChatGPT", emoji: "🤖" };
   if (/perplexity/.test(h)) return { key: "perplexity", label: "Perplexity", emoji: "🤖" };

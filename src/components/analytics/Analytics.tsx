@@ -32,9 +32,12 @@ function sendSessionPing() {
     utm_term: p.get("utm_term") || undefined,
     utm_content: p.get("utm_content") || undefined,
     msclkid: p.get("msclkid") || undefined,
-    gclid: a.gclid,
-    gbraid: a.gbraid,
-    wbraid: a.wbraid,
+    // Klick-IDs zuerst direkt aus der Landing-URL lesen (First-Party-Kampagnenparameter,
+    // wie utm_*). Sonst würden Google-Ads-Klicks ohne Cookie-Einwilligung als „Direct"
+    // gezählt. Fallback auf den (consent-gated) Cookie-Wert bei Folgeseiten ohne Parameter.
+    gclid: p.get("gclid") || a.gclid || undefined,
+    gbraid: p.get("gbraid") || a.gbraid || undefined,
+    wbraid: p.get("wbraid") || a.wbraid || undefined,
   });
   try {
     if (navigator.sendBeacon) navigator.sendBeacon("/api/track", new Blob([body], { type: "application/json" }));

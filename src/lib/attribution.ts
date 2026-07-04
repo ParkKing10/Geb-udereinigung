@@ -97,13 +97,19 @@ export function getAttribution(): Attribution {
 }
 
 // First-Touch-Infos für anonyme First-Party-Statistik (Presence/Session):
-// Referrer + UTM aus dem Speicher – KEINE Klick-IDs (die bleiben consent-gated).
-export function getTouch(): { referrer?: string; utm_source?: string; utm_medium?: string; utm_term?: string } {
+// Referrer + UTM + Klick-IDs aus dem Speicher. Die Klick-IDs dienen hier NUR der
+// Quellen-Erkennung (Google Ads vs. Direct) – sie werden weder in ein Cookie
+// persistiert noch an Google gesendet; das bleibt getAttribution/appendAttribution
+// (consent-gated) vorbehalten.
+export function getTouch(): { referrer?: string; utm_source?: string; utm_medium?: string; utm_term?: string; gclid?: string; gbraid?: string; wbraid?: string } {
   return {
     referrer: session.referrer,
     utm_source: session.utm_source,
     utm_medium: session.utm_medium,
     utm_term: session.utm_term,
+    gclid: session.gclid,
+    gbraid: session.gbraid,
+    wbraid: session.wbraid,
   };
 }
 
