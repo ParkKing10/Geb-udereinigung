@@ -71,7 +71,7 @@ export async function SubHero({
 
           <div className="sf-hero-cta">
             <QuoteButton variant="dark" size="lg" service={ctaService}>
-              Jetzt kostenloses Angebot anfordern <ArrowRight size={16} />
+              Kostenloses Angebot anfordern <ArrowRight size={16} />
             </QuoteButton>
             <a data-track="subhero" className="sf-btn sf-btn-outline sf-btn-lg" href={tel}>
               <Phone size={16} /> {CONTACT.phone}
