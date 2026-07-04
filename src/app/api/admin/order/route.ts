@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { hasNavAccess } from "@/lib/admin/actor";
-import { createOrder, getLead, updateLead, readOrders, deleteOrder } from "@/lib/admin/store";
+import { createOrder, getLead, getOrder, updateLead, readOrders, deleteOrder } from "@/lib/admin/store";
+import { scopeToAccount, ownsRecord } from "@/lib/admin/scope";
 import { deriveSource } from "@/lib/marketing/source";
 
 export const runtime = "nodejs";
@@ -11,7 +12,7 @@ async function requireAdmin(): Promise<boolean> {
 
 export async function GET() {
   if (!(await requireAdmin())) return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
-  return NextResponse.json(await readOrders());
+  return NextResponse.json(await scopeToAccount(await readOrders())); // nur eigener Account
 }
 
 export async function POST(req: Request) {
@@ -31,14 +32,19 @@ export async function POST(req: Request) {
   let src = { key: "direct", label: "Direct", emoji: "⚫" };
   let keyword: string | undefined;
   let campaign: string | undefined;
-  const leadId = b.leadId ? String(b.leadId) : null;
+  // Nur mit einem Lead des EIGENEN Accounts verknüpfen (fremde Leads bleiben unsichtbar).
+  let leadId = b.leadId ? String(b.leadId) : null;
   if (leadId) {
     const lead = await getLead(leadId);
-    if (lead?.attribution) {
-      const a = lead.attribution;
-      src = deriveSource({ gclid: a.gclid, gbraid: a.gbraid, wbraid: a.wbraid, utm_source: a.utm_source, utm_medium: a.utm_medium, referrer: a.referrer });
-      keyword = a.utm_term;
-      campaign = a.utm_campaign;
+    if (lead && (await ownsRecord(lead))) {
+      if (lead.attribution) {
+        const a = lead.attribution;
+        src = deriveSource({ gclid: a.gclid, gbraid: a.gbraid, wbraid: a.wbraid, utm_source: a.utm_source, utm_medium: a.utm_medium, referrer: a.referrer });
+        keyword = a.utm_term;
+        campaign = a.utm_campaign;
+      }
+    } else {
+      leadId = null;
     }
   }
   if (typeof b.source === "string" && b.source.trim()) {
@@ -76,6 +82,8 @@ export async function DELETE(req: Request) {
   const id = body?.id ? String(body.id) : "";
   if (!id) return NextResponse.json({ error: "id fehlt" }, { status: 400 });
 
+  // Nur eigene Aufträge dürfen gelöscht werden (fremde erscheinen als "nicht gefunden").
+  if (!(await ownsRecord(await getOrder(id)))) return NextResponse.json({ error: "Auftrag nicht gefunden" }, { status: 404 });
   const ok = await deleteOrder(id);
   if (!ok) return NextResponse.json({ error: "Auftrag nicht gefunden" }, { status: 404 });
   return NextResponse.json({ ok: true });

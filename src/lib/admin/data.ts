@@ -31,6 +31,7 @@ export type AdminOffer = {
 
 export type Lead = {
   id: string;
+  ownerId?: string; // Mandanten-Trennung: welcher Account "besitzt" den Lead (Website → "owner")
   service: string;
   location: string;
   name: string;
@@ -67,6 +68,7 @@ export type Message = {
 export type OrderStatus = "Neu" | "Bestätigt" | "Aktiv" | "Abgeschlossen" | "Storniert";
 export type Order = {
   id: string;
+  ownerId?: string; // Mandanten-Trennung: welcher Account hat den Auftrag angelegt
   createdAt: string;
   leadId?: string | null;
   customerName: string;

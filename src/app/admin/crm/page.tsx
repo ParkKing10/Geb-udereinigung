@@ -3,12 +3,13 @@ import { List, Sparkles, Handshake, Trophy } from "lucide-react";
 import { PageHeader, StatCard, btn } from "@/components/admin/ui";
 import { LeadsPipeline } from "@/components/admin/LeadsPipeline";
 import { readLeads } from "@/lib/admin/store";
+import { scopeToAccount } from "@/lib/admin/scope";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "CRM – Deutsche Gebäudedienste" };
 
 export default async function CrmPage() {
-  const leads = await readLeads();
+  const leads = await scopeToAccount(await readLeads());
   const offen = leads.filter((l) => ["Neu", "Kontaktiert", "Angebot"].includes((l.status as string) ?? "Neu")).length;
   const inArbeit = leads.filter((l) => ["Kontaktiert", "Angebot"].includes((l.status as string) ?? "")).length;
   const gewonnen = leads.filter((l) => l.status === "Gewonnen").length;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { hasNavAccess } from "@/lib/admin/actor";
 import { readExpenses, addExpense, deleteExpense, EXPENSE_CATEGORIES, type ExpenseCategory, type ExpenseCadence } from "@/lib/admin/expenses";
+import { scopeToAccount, ownsRecord } from "@/lib/admin/scope";
 
 export const runtime = "nodejs";
 
@@ -10,7 +11,7 @@ async function ok(): Promise<boolean> {
 
 export async function GET() {
   if (!(await ok())) return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
-  return NextResponse.json(await readExpenses());
+  return NextResponse.json(await scopeToAccount(await readExpenses())); // nur eigener Account
 }
 
 export async function POST(req: Request) {
@@ -30,6 +31,8 @@ export async function DELETE(req: Request) {
   if (!(await ok())) return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
   const b = (await req.json().catch(() => null)) as { id?: string } | null;
   if (!b?.id) return NextResponse.json({ error: "id fehlt" }, { status: 400 });
+  const exp = (await readExpenses()).find((e) => e.id === b.id);
+  if (!(await ownsRecord(exp))) return NextResponse.json({ error: "Ausgabe nicht gefunden" }, { status: 404 });
   await deleteExpense(b.id);
   return NextResponse.json({ ok: true });
 }

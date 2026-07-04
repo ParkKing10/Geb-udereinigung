@@ -4,13 +4,15 @@ import { InvoicesClient } from "@/components/admin/InvoicesClient";
 import { InvoiceSettingsForm } from "@/components/admin/InvoiceSettingsForm";
 import { readInvoices, readInvoiceSettings, effectiveStatus, grossCents } from "@/lib/admin/invoices";
 import { readOrders } from "@/lib/admin/store";
+import { scopeToAccount } from "@/lib/admin/scope";
 import { formatEUR } from "@/lib/admin/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Rechnungen – Deutsche Gebäudedienste" };
 
 export default async function InvoicesPage() {
-  const [invoices, orders, settings] = await Promise.all([readInvoices(), readOrders(), readInvoiceSettings()]);
+  const [invoicesRaw, ordersRaw, settings] = await Promise.all([readInvoices(), readOrders(), readInvoiceSettings()]);
+  const [invoices, orders] = [await scopeToAccount(invoicesRaw), await scopeToAccount(ordersRaw)];
 
   const withStatus = invoices.map((i) => ({ i, eff: effectiveStatus(i), gross: grossCents(i) }));
   const total = withStatus.filter((x) => x.eff !== "Entwurf").reduce((a, x) => a + x.gross, 0);

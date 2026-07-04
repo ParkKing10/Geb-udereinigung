@@ -26,6 +26,17 @@ export async function getActor(): Promise<Actor | null> {
   return null;
 }
 
+// Eindeutiger Konto-Schlüssel für die Mandanten-Trennung (jeder Account = eigener
+// Datenbereich). Inhaber → "owner"; Mitarbeiter-Account → "user:<id>".
+export function accountKeyOf(actor: Actor): string {
+  return actor.kind === "owner" ? "owner" : `user:${actor.id}`;
+}
+
+export async function currentAccountKey(): Promise<string | null> {
+  const actor = await getActor();
+  return actor ? accountKeyOf(actor) : null;
+}
+
 /** Darf der Actor diesen Nav-Bereich (Href) sehen? Dashboard ist immer erlaubt. */
 export function can(actor: Actor, navHref: string): boolean {
   if (actor.kind === "owner") return true;

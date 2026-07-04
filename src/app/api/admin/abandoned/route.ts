@@ -9,13 +9,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const g = await guardNav("/admin/abgebrochen");
+  const g = await guardNav("owner");
   if (g) return g;
   return NextResponse.json(await listAbandoned());
 }
 
 export async function POST(req: Request) {
-  const g = await guardNav("/admin/abgebrochen");
+  const g = await guardNav("owner");
   if (g) return g;
   const body = await req.json().catch(() => null);
   const id = body?.id ? String(body.id) : "";
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const g = await guardNav("/admin/abgebrochen");
+  const g = await guardNav("owner");
   if (g) return g;
   const body = await req.json().catch(() => null);
   const id = body?.id ? String(body.id) : "";

@@ -101,7 +101,7 @@ export async function POST(req: Request) {
     : await estimateLead({ service, serviceName, location, images: aiImages, areaSqm, objektart, verschmutzung, turnus, besonderheiten, details });
 
   const lead: Lead = {
-    id, service, location: leadLocation, name: leadName, phone, email, startDate,
+    id, ownerId: "owner", service, location: leadLocation, name: leadName, phone, email, startDate,
     createdAt: new Date().toISOString(),
     areaSqm, objektart, verschmutzung, turnus, zeitfenster, firma, besonderheiten: leadBesonderheiten, details,
     attribution: Object.keys(attribution).length ? attribution : null,

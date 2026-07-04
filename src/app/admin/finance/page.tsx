@@ -2,12 +2,13 @@ import { Wallet, ReceiptText, Clock, AlertTriangle } from "lucide-react";
 import { PageHeader, StatCard, Panel } from "@/components/admin/ui";
 import { BarChart } from "@/components/admin/charts";
 import { readInvoices, effectiveStatus, grossCents, monthlyPaidGross } from "@/lib/admin/invoices";
+import { scopeToAccount } from "@/lib/admin/scope";
 import { formatEUR } from "@/lib/admin/format";
 
 export const dynamic = "force-dynamic";
 
 export default async function FinancePage() {
-  const invoices = await readInvoices();
+  const invoices = await scopeToAccount(await readInvoices());
   const rows = invoices.map((i) => ({ i, eff: effectiveStatus(i), gross: grossCents(i) }));
 
   const paid = rows.filter((r) => r.eff === "Bezahlt").reduce((a, r) => a + r.gross, 0);

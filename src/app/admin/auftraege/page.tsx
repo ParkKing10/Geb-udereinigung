@@ -2,12 +2,13 @@ import { CalendarCheck, Wallet, Repeat, TrendingUp } from "lucide-react";
 import { PageHeader, StatCard } from "@/components/admin/ui";
 import { OrdersClient } from "@/components/admin/OrdersClient";
 import { readOrders } from "@/lib/admin/store";
+import { scopeToAccount } from "@/lib/admin/scope";
 import { formatEUR } from "@/lib/admin/format";
 
 export const dynamic = "force-dynamic";
 
 export default async function AuftraegePage() {
-  const orders = (await readOrders()).slice().reverse(); // neueste zuerst
+  const orders = (await scopeToAccount(await readOrders())).slice().reverse(); // neueste zuerst, nur eigener Account
   const count = orders.length;
   const revenue = orders.reduce((a, o) => a + (o.status === "Storniert" ? 0 : o.amountCents), 0);
   const repeat = orders.filter((o) => o.repeat).length;

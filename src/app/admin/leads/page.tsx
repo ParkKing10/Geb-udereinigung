@@ -3,12 +3,15 @@ import Link from "next/link";
 import { PageHeader, StatCard, Panel, btn } from "@/components/admin/ui";
 import { LeadsList } from "@/components/admin/LeadsList";
 import { readLeads, readMessages } from "@/lib/admin/store";
+import { scopeToAccount, isOwnerAccount } from "@/lib/admin/scope";
 import { relativeTime, initials } from "@/lib/admin/format";
 
 export const dynamic = "force-dynamic";
 
 export default async function LeadsPage() {
-  const [leads, messages] = await Promise.all([readLeads(), readMessages()]);
+  const [leadsRaw, messagesRaw, owner] = await Promise.all([readLeads(), readMessages(), isOwnerAccount()]);
+  const leads = await scopeToAccount(leadsRaw);
+  const messages = owner ? messagesRaw : []; // Kontaktnachrichten (Website) nur für den Inhaber
   const now = Date.now();
   const neu = leads.filter((l) => (l.status ?? "Neu") === "Neu").length;
   const gewonnen = leads.filter((l) => l.status === "Gewonnen").length;

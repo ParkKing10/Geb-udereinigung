@@ -2,6 +2,8 @@
 import { promises as fs } from "node:fs";
 import { dataPath, uploadPath } from "@/lib/data-dir";
 import type { Lead, Message, Order } from "./data";
+import { currentAccountKey } from "./actor";
+import { OWNER_KEY } from "./scope";
 
 async function readJson<T>(file: string): Promise<T[]> {
   try {
@@ -42,9 +44,12 @@ export async function createOrder(input: NewOrder): Promise<Order> {
   const p = dataPath("orders.json");
   const orders = await readJson<Order>("orders.json");
   const email = input.customerEmail.trim().toLowerCase();
-  const prior = orders.filter((o) => o.customerEmail.trim().toLowerCase() === email).length;
+  const owner = input.ownerId ?? (await currentAccountKey()) ?? OWNER_KEY;
+  // Wiederbesteller-Zähler nur innerhalb desselben Accounts (Mandanten-Trennung).
+  const prior = orders.filter((o) => (o.ownerId || OWNER_KEY) === owner && o.customerEmail.trim().toLowerCase() === email).length;
   const order: Order = {
     ...input,
+    ownerId: owner,
     customerEmail: email,
     id: `ord_${Date.now()}`,
     createdAt: new Date().toISOString(),

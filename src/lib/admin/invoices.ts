@@ -5,6 +5,8 @@ import { promises as fs } from "node:fs";
 import { dataPath } from "@/lib/data-dir";
 import { randomUUID } from "node:crypto";
 import { BRAND, CONTACT } from "@/lib/sauberfit-data";
+import { currentAccountKey } from "./actor";
+import { OWNER_KEY } from "./scope";
 import type { Invoice, InvoiceSettings } from "./invoice-utils";
 
 export type { Invoice, InvoiceStatus, InvoiceSettings } from "./invoice-utils";
@@ -98,6 +100,7 @@ export async function createInvoice(input: NewInvoice): Promise<Invoice> {
     : new Date(issued.getTime() + settings.paymentTermDays * 24 * 60 * 60 * 1000);
   const invoice: Invoice = {
     id: `inv_${Date.now()}_${randomUUID().slice(0, 8)}`,
+    ownerId: (await currentAccountKey()) ?? OWNER_KEY,
     number: nextNumber(list, settings.numberPrefix, issued.getFullYear()),
     orderId: input.orderId ?? null,
     customerName: input.customerName,

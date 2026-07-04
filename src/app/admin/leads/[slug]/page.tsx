@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Mail, Phone, MapPin, Calendar, Clock, Ruler, Gauge, Sparkles, CircleCheck, ImageOff, Building2, RefreshCw } from "lucide-react";
 import { getLead } from "@/lib/admin/store";
+import { ownsRecord } from "@/lib/admin/scope";
 import { getService } from "@/lib/sauberfit-data";
 import { leadStatus } from "@/lib/admin/data";
 import { formatEUR, formatDate, formatDateTime } from "@/lib/admin/format";
@@ -15,7 +16,7 @@ export const dynamic = "force-dynamic";
 export default async function LeadDetail({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const lead = await getLead(slug);
-  if (!lead) notFound();
+  if (!lead || !(await ownsRecord(lead))) notFound(); // fremde Leads sind für andere Accounts unsichtbar
 
   const serviceName = getService(lead.service)?.name ?? lead.service;
   const est = lead.estimate;

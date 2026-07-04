@@ -8,7 +8,8 @@ import { readInvoices, effectiveStatus, grossCents, monthlyPaidGross } from "@/l
 import { formatEUR, formatDate, relativeTime, initials } from "@/lib/admin/format";
 import { LiveVisitors } from "@/components/admin/LiveVisitors";
 import { DateRange } from "@/components/admin/DateRange";
-import { getActor, can } from "@/lib/admin/actor";
+import { getActor, can, accountKeyOf } from "@/lib/admin/actor";
+import { OWNER_KEY } from "@/lib/admin/scope";
 
 export const dynamic = "force-dynamic";
 
@@ -17,10 +18,19 @@ const berlinDay = (iso: string) => new Date(iso).toLocaleDateString("sv-SE", { t
 const deDate = (day: string) => new Date(`${day}T12:00:00`).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" });
 
 export default async function AdminDashboard({ searchParams }: { searchParams: Promise<{ von?: string; bis?: string }> }) {
-  const [leads, orders, invoices, sessions, actor, sp] = await Promise.all([
+  const [leadsAll, ordersAll, invoicesAll, sessionsAll, actor, sp] = await Promise.all([
     readLeads(), readOrders(), readInvoices(), readSessions<{ ts?: string }>(), getActor(), searchParams,
   ]);
   const now = Date.now();
+
+  // Mandanten-Trennung: jeder Account sieht nur seine eigenen Daten; Website-Zuläufe
+  // (Leads, Sessions) gehören dem Inhaber ("owner").
+  const acctKey = actor ? accountKeyOf(actor) : null;
+  const mine = <T extends { ownerId?: string }>(rows: T[]) => (acctKey ? rows.filter((r) => (r.ownerId || OWNER_KEY) === acctKey) : []);
+  const leads = mine(leadsAll);
+  const orders = mine(ordersAll);
+  const invoices = mine(invoicesAll);
+  const sessions = acctKey === OWNER_KEY ? sessionsAll : [];
 
   // Zeitraum aus der URL (?von&bis, YYYY-MM-DD); Default = heute.
   const today = berlinDay(new Date().toISOString());

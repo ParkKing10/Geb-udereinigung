@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { hasNavAccess } from "@/lib/admin/actor";
-import { readInvoices, createInvoice, updateInvoice, deleteInvoice, type Invoice } from "@/lib/admin/invoices";
+import { readInvoices, createInvoice, updateInvoice, deleteInvoice, getInvoice, type Invoice } from "@/lib/admin/invoices";
 import { getOrder } from "@/lib/admin/store";
+import { scopeToAccount, ownsRecord } from "@/lib/admin/scope";
 
 export const runtime = "nodejs";
 
@@ -11,7 +12,7 @@ async function ok(): Promise<boolean> {
 
 export async function GET() {
   if (!(await ok())) return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
-  return NextResponse.json(await readInvoices());
+  return NextResponse.json(await scopeToAccount(await readInvoices())); // nur eigener Account
 }
 
 // Anlegen – manuell (netEuro + Kundendaten) ODER aus einem Auftrag (orderId).
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
 
   if (orderId) {
     const order = await getOrder(orderId);
-    if (!order) return NextResponse.json({ error: "Auftrag nicht gefunden." }, { status: 404 });
+    if (!order || !(await ownsRecord(order))) return NextResponse.json({ error: "Auftrag nicht gefunden." }, { status: 404 });
     customerName = customerName || order.customerName;
     customerEmail = customerEmail || order.customerEmail;
     service = service || order.service;
@@ -63,6 +64,7 @@ export async function PATCH(req: Request) {
   if (!(await ok())) return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
   const b = (await req.json().catch(() => null)) as (Partial<Invoice> & { id?: string }) | null;
   if (!b?.id) return NextResponse.json({ error: "id fehlt" }, { status: 400 });
+  if (!(await ownsRecord(await getInvoice(b.id)))) return NextResponse.json({ error: "Rechnung nicht gefunden" }, { status: 404 });
   const updated = await updateInvoice(b.id, b);
   if (!updated) return NextResponse.json({ error: "Rechnung nicht gefunden" }, { status: 404 });
   return NextResponse.json(updated);
@@ -72,6 +74,7 @@ export async function DELETE(req: Request) {
   if (!(await ok())) return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
   const b = (await req.json().catch(() => null)) as { id?: string } | null;
   if (!b?.id) return NextResponse.json({ error: "id fehlt" }, { status: 400 });
+  if (!(await ownsRecord(await getInvoice(b.id)))) return NextResponse.json({ error: "Rechnung nicht gefunden" }, { status: 404 });
   await deleteInvoice(b.id);
   return NextResponse.json({ ok: true });
 }

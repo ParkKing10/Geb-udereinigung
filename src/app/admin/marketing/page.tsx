@@ -1,4 +1,5 @@
 import { readSessions, readLeads, readOrders } from "@/lib/admin/store";
+import { scopeToAccount, isOwnerAccount } from "@/lib/admin/scope";
 import { deriveSource } from "@/lib/marketing/source";
 import type { MSession, MLead, MOrder } from "@/lib/marketing/aggregate";
 import { MarketingDashboard } from "@/components/admin/MarketingDashboard";
@@ -14,9 +15,17 @@ type StoredSession = {
 };
 
 export default async function MarketingPage() {
-  const [rawSessions, leads, orders, journeyEvents, abandoned] = await Promise.all([
+  // Marketing = Website-Analytik → nur der Inhaber sieht Sessions/Journey/Abbrüche.
+  // Leads/Aufträge bleiben pro Account getrennt.
+  const owner = await isOwnerAccount();
+  const [rawSessionsAll, leadsRaw, ordersRaw, journeyAll, abandonedAll] = await Promise.all([
     readSessions<StoredSession>(), readLeads(), readOrders(), readJourneyEvents(), listAbandoned(),
   ]);
+  const rawSessions = owner ? rawSessionsAll : [];
+  const leads = await scopeToAccount(leadsRaw);
+  const orders = await scopeToAccount(ordersRaw);
+  const journeyEvents = owner ? journeyAll : [];
+  const abandoned = owner ? abandonedAll : [];
 
   const sessions: MSession[] = rawSessions.map((s) => ({
     ts: s.ts, source: s.source, label: s.label, emoji: s.emoji, device: s.device, landing: s.landing, keyword: s.keyword, campaign: s.campaign,

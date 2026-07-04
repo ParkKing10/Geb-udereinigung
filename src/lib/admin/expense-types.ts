@@ -15,6 +15,7 @@ export type ExpenseCadence = "monatlich" | "einmalig";
 
 export type Expense = {
   id: string;
+  ownerId?: string; // Mandanten-Trennung: welcher Account hat die Ausgabe angelegt
   label: string;
   category: ExpenseCategory;
   amountCents: number;

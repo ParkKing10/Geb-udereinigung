@@ -3,13 +3,15 @@ import { PageHeader, StatCard, Panel } from "@/components/admin/ui";
 import { ExpensesClient } from "@/components/admin/ExpensesClient";
 import { readExpenses, expenseSummary } from "@/lib/admin/expenses";
 import { readInvoices, monthlyPaidGross } from "@/lib/admin/invoices";
+import { scopeToAccount } from "@/lib/admin/scope";
 import { formatEUR } from "@/lib/admin/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Betriebskosten – Deutsche Gebäudedienste" };
 
 export default async function BetriebskostenPage() {
-  const [expenses, invoices] = await Promise.all([readExpenses(), readInvoices()]);
+  const [expensesRaw, invoicesRaw] = await Promise.all([readExpenses(), readInvoices()]);
+  const [expenses, invoices] = [await scopeToAccount(expensesRaw), await scopeToAccount(invoicesRaw)];
   const sum = expenseSummary(expenses);
 
   // Umsatz des laufenden Monats = brutto bezahlter Rechnungen.

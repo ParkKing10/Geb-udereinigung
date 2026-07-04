@@ -4,6 +4,7 @@ export type InvoiceStatus = "Entwurf" | "Offen" | "Bezahlt" | "Überfällig";
 
 export type Invoice = {
   id: string;
+  ownerId?: string; // Mandanten-Trennung: welcher Account hat die Rechnung angelegt
   number: string; // z. B. RE-2026-0001
   orderId?: string | null;
   customerName: string;

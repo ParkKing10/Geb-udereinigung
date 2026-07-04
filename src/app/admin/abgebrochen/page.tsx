@@ -2,11 +2,13 @@ import { UserX, Hourglass, PhoneCall } from "lucide-react";
 import { PageHeader, StatCard } from "@/components/admin/ui";
 import { AbandonedClient } from "@/components/admin/AbandonedClient";
 import { listAbandoned } from "@/lib/admin/abandoned";
+import { isOwnerAccount } from "@/lib/admin/scope";
 
 export const dynamic = "force-dynamic";
 
 export default async function AbgebrochenPage() {
-  const items = await listAbandoned();
+  // Abgebrochene Formulare stammen von der Website → nur der Inhaber sieht sie.
+  const items = (await isOwnerAccount()) ? await listAbandoned() : [];
   const offen = items.filter((a) => a.status === "offen");
   const mitTelefon = offen.filter((a) => a.phone).length;
 

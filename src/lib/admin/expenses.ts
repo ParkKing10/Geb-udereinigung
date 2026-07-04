@@ -3,6 +3,8 @@
 import { promises as fs } from "node:fs";
 import { dataPath } from "@/lib/data-dir";
 import { randomUUID } from "node:crypto";
+import { currentAccountKey } from "./actor";
+import { OWNER_KEY } from "./scope";
 import type { Expense, ExpenseCategory, ExpenseCadence } from "./expense-types";
 
 export { EXPENSE_CATEGORIES, expenseSummary } from "./expense-types";
@@ -34,6 +36,7 @@ export async function addExpense(input: NewExpense): Promise<Expense> {
   const now = new Date().toISOString();
   const exp: Expense = {
     id: `exp_${Date.now()}_${randomUUID().slice(0, 8)}`,
+    ownerId: (await currentAccountKey()) ?? OWNER_KEY,
     label: input.label,
     category: input.category,
     amountCents: Math.round(input.amountCents),
