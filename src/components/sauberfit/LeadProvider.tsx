@@ -2,13 +2,13 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import Image from "next/image";
-import { X, ArrowRight, ArrowLeft, Check, Sparkles, ShieldCheck, ImagePlus, Trash2, Plus, ChevronUp } from "lucide-react";
+import { X, ArrowRight, ArrowLeft, Check, Sparkles, ShieldCheck, ImagePlus, Trash2, Plus, ChevronUp, Phone } from "lucide-react";
 import { SERVICES } from "@/lib/sauberfit-data";
 import type { ContactPerson } from "@/lib/site-content";
 import { trackQuoteOpen, trackQuoteStep, trackLead, leadValue, getSid, journey } from "@/lib/analytics";
 import { appendAttribution, getAttribution } from "@/lib/attribution";
 
-const STEP_NAMES = ["Leistung", "Objekt", "Kontakt"];
+const STEP_NAMES = ["Anliegen", "Kontakt"];
 
 type LeadCtx = { open: (service?: string) => void };
 const Ctx = createContext<LeadCtx | null>(null);
@@ -47,7 +47,7 @@ const EMPTY: Form = {
   etagen: "", aufzug: "", sanitaer: "", glas: "", moebliert: "", parken: "", aussen: "", besonderheiten: "",
   firma: "", name: "", phone: "", email: "",
 };
-const STEP_TITLES = ["Leistung", "Objekt", "Kontakt"];
+const STEP_TITLES = ["Anliegen", "Kontakt"];
 
 const OBJEKTARTEN = ["Bürogebäude", "Praxis / Klinik", "Hotel / Gastronomie", "Wohnhaus / Treppenhaus", "Ladenlokal / Handel", "Industrie / Halle", "Kita / Schule", "Sonstiges"];
 const VERSCHMUTZUNG: [string, string][] = [["leicht", "leicht – gepflegt"], ["normal", "normal"], ["stark", "stark – Grundreinigung nötig"]];
@@ -65,6 +65,12 @@ export function LeadProvider({ children, person }: { children: React.ReactNode; 
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  // Rückruf-Shortcut ("Lieber anrufen lassen?") – fängt halbe Leads ab.
+  const [cbOpen, setCbOpen] = useState(false);
+  const [cbPhone, setCbPhone] = useState("");
+  const [cbLoading, setCbLoading] = useState(false);
+  const [cbDone, setCbDone] = useState(false);
+  const [cbError, setCbError] = useState<string | null>(null);
 
   function resetImages() {
     setPreviews((p) => { p.forEach((u) => URL.revokeObjectURL(u)); return []; });
@@ -120,6 +126,7 @@ export function LeadProvider({ children, person }: { children: React.ReactNode; 
     setShowMore(false);
     setError(null);
     setDone(false);
+    setCbOpen(false); setCbPhone(""); setCbDone(false); setCbError(null);
     setIsOpen(true);
     trackQuoteOpen(service ? "service" : "cta", service);
     journey("quote_open");
@@ -154,10 +161,12 @@ export function LeadProvider({ children, person }: { children: React.ReactNode; 
 
   function next() {
     setError(null);
-    if (step === 0 && !form.service) return setError("Bitte wählen Sie eine Leistung.");
-    if (step === 1 && !form.location.trim()) return setError("Bitte geben Sie den Ort an.");
-    if (step === 1 && !form.objektart) return setError("Bitte wählen Sie die Objektart.");
-    const target = Math.min(step + 1, 2);
+    if (step === 0) {
+      if (!form.service) return setError("Bitte wählen Sie eine Leistung.");
+      if (!form.location.trim()) return setError("Bitte geben Sie den Ort an.");
+      if (!form.objektart) return setError("Bitte wählen Sie die Objektart.");
+    }
+    const target = Math.min(step + 1, 1);
     trackQuoteStep(target, STEP_NAMES[target]);
     journey("quote_step", String(target + 1));
     setStep(target);
@@ -202,6 +211,31 @@ export function LeadProvider({ children, person }: { children: React.ReactNode; 
 
   const serviceName = SERVICES.find((s) => s.slug === form.service)?.name ?? form.service;
 
+  // Rückruf-Shortcut: nur Nummer → sofort ein echter Lead (Push inklusive).
+  async function requestCallback() {
+    setCbError(null);
+    if (cbPhone.replace(/\D/g, "").length < 6) { setCbError("Bitte eine gültige Handynummer eingeben."); return; }
+    setCbLoading(true);
+    try {
+      const fd = new FormData();
+      fd.append("quick", "1");
+      fd.append("phone", cbPhone);
+      if (form.service) fd.append("service", form.service);
+      if (form.location) fd.append("location", form.location);
+      appendAttribution(fd);
+      fd.append("sid", getSid());
+      const res = await fetch("/api/lead", { method: "POST", body: fd });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); setCbError(d.error ?? "Bitte erneut versuchen."); return; }
+      const data = await res.json().catch(() => ({} as { id?: string }));
+      trackLead({ leadId: data.id ?? "callback", service: serviceName || undefined, phone: cbPhone });
+      setCbDone(true);
+    } catch {
+      setCbError("Netzwerkfehler. Bitte erneut versuchen.");
+    } finally {
+      setCbLoading(false);
+    }
+  }
+
   return (
     <Ctx.Provider value={{ open }}>
       {children}
@@ -243,13 +277,13 @@ export function LeadProvider({ children, person }: { children: React.ReactNode; 
                 <div className="sf-modal-top">
                   <div className="l">
                     <b>Angebot berechnen</b>
-                    <p>Kostenlos & unverbindlich · Schritt {step + 1} von 3 · {STEP_TITLES[step]}</p>
+                    <p>Kostenlos & unverbindlich · Schritt {step + 1} von 2 · {STEP_TITLES[step]}</p>
                   </div>
                   <button className="sf-modal-x" onClick={close} aria-label="Schließen"><X size={18} /></button>
                 </div>
 
                 <div className="sf-modal-steps">
-                  {[0, 1, 2].map((i) => (
+                  {[0, 1].map((i) => (
                     <span key={i} className={`sf-step-dot${i <= step ? " on" : ""}`} />
                   ))}
                 </div>
@@ -272,12 +306,8 @@ export function LeadProvider({ children, person }: { children: React.ReactNode; 
                           </button>
                         ))}
                       </div>
-                    </>
-                  )}
 
-                  {step === 1 && (
-                    <>
-                      <h3>Wo & was soll gereinigt werden?</h3>
+                      <h3 className="sf-step-sub">Wo &amp; was soll gereinigt werden?</h3>
                       <div className="sf-field">
                         <label htmlFor="lead-loc">Ort / PLZ / Adresse</label>
                         <input
@@ -286,7 +316,6 @@ export function LeadProvider({ children, person }: { children: React.ReactNode; 
                           placeholder="z. B. Frankfurt oder 60311"
                           value={form.location}
                           onChange={(e) => set("location", e.target.value)}
-                          autoFocus
                         />
                       </div>
                       <div className="sf-grid2">
@@ -381,7 +410,7 @@ export function LeadProvider({ children, person }: { children: React.ReactNode; 
                     </>
                   )}
 
-                  {step === 2 && (
+                  {step === 1 && (
                     <>
                       <h3>Wie erreichen wir Sie?</h3>
                       <div className="sf-field">
@@ -430,13 +459,31 @@ export function LeadProvider({ children, person }: { children: React.ReactNode; 
                   ) : (
                     <button className="sf-btn sf-btn-outline" onClick={close}>Abbrechen</button>
                   )}
-                  {step < 2 ? (
+                  {step < 1 ? (
                     <button className="sf-btn sf-btn-dark" onClick={next}>Weiter <ArrowRight size={16} /></button>
                   ) : (
                     <button className="sf-btn sf-btn-green" onClick={submit} disabled={loading}>
                       {loading ? "Wird gesendet …" : "Angebot anfordern"}
                     </button>
                   )}
+                </div>
+
+                <div className="sf-cb">
+                  {cbDone ? (
+                    <p className="sf-cb-done"><Check size={15} /> Danke! Wir rufen Sie schnellstmöglich zurück.</p>
+                  ) : cbOpen ? (
+                    <div className="sf-cb-row">
+                      <input className="sf-input" type="tel" inputMode="tel" placeholder="Ihre Handynummer" value={cbPhone} onChange={(e) => setCbPhone(e.target.value)} autoFocus />
+                      <button className="sf-btn sf-btn-green" onClick={requestCallback} disabled={cbLoading}>
+                        {cbLoading ? "…" : <>Rückruf <Phone size={15} /></>}
+                      </button>
+                    </div>
+                  ) : (
+                    <button type="button" className="sf-cb-toggle" onClick={() => { setCbOpen(true); setCbError(null); }}>
+                      <Phone size={14} /> Keine Zeit? Nummer hier – wir rufen zurück →
+                    </button>
+                  )}
+                  {cbError && <p className="sf-modal-err" style={{ marginTop: "0.5rem" }}>{cbError}</p>}
                 </div>
 
                 <div className="sf-modal-trust"><ShieldCheck size={14} /> Ihre Daten sind sicher · 100% DSGVO-konform</div>

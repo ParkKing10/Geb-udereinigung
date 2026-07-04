@@ -289,6 +289,17 @@ img { display: block; max-width: 100%; }
 .sf-cta-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.1rem; margin-top: 0.9rem; }
 .sf-cta-micro { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; font-weight: 600; color: var(--ink-2); }
 .sf-cta-micro svg { color: var(--green); }
+
+/* Zwischenüberschrift im zusammengefassten Formular-Schritt 1 (Leistung + Objekt) */
+.sf-step-sub { margin-top: 1.6rem; }
+
+/* Rückruf-Shortcut im Angebots-Modal ("Keine Zeit? Nummer hier") */
+.sf-cb { border-top: 1px solid var(--border); padding: 0.75rem 1.25rem 0.25rem; }
+.sf-cb-toggle { display: inline-flex; align-items: center; gap: 0.4rem; background: none; border: none; padding: 0.25rem 0; margin: 0; font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--green); cursor: pointer; }
+.sf-cb-toggle:hover { text-decoration: underline; }
+.sf-cb-row { display: flex; gap: 0.5rem; }
+.sf-cb-row .sf-input { flex: 1; }
+.sf-cb-done { margin: 0; display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.88rem; font-weight: 700; color: var(--green); }
 .sf-risk { list-style: none; display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; margin: 1.05rem 0 0; padding: 0; }
 .sf-risk li { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.82rem; font-weight: 600; color: var(--muted); }
 .sf-risk svg { color: var(--green); }

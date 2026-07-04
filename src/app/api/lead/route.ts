@@ -47,9 +47,19 @@ export async function POST(req: Request) {
     .filter(([, v]) => v)
     .map(([label, value]) => ({ label, value }));
 
-  if (!service || !location || !name || !phone || !email) {
+  // Rückruf-Shortcut ("Lieber anrufen lassen?"): nur die Handynummer ist Pflicht.
+  const quick = String(form.get("quick") ?? "") === "1";
+  if (quick) {
+    if (!phone) return NextResponse.json({ error: "Bitte Handynummer angeben." }, { status: 400 });
+  } else if (!service || !location || !name || !phone || !email) {
     return NextResponse.json({ error: "Bitte Leistung, Ort, Name, Handynummer und E-Mail angeben." }, { status: 400 });
   }
+
+  const leadName = name || (quick ? "Rückruf erbeten" : name);
+  const leadLocation = location || (quick ? "—" : location);
+  const leadBesonderheiten = quick
+    ? ["⚡ Schnell-Anfrage: Rückruf gewünscht", besonderheiten].filter(Boolean).join(" · ")
+    : besonderheiten;
 
   const id = `lead_${Date.now()}`;
   const serviceName = SERVICES.find((s) => s.slug === service)?.name ?? service;
@@ -82,13 +92,16 @@ export async function POST(req: Request) {
     }
   }
 
-  // KI-Schätzung berechnen (Anthropic-Vision oder Heuristik-Fallback).
-  const estimate = await estimateLead({ service, serviceName, location, images: aiImages, areaSqm, objektart, verschmutzung, turnus, besonderheiten, details });
+  // KI-Schätzung berechnen (Anthropic-Vision oder Heuristik-Fallback). Beim Rückruf-
+  // Shortcut übersprungen – da liegen keine Objektdaten vor.
+  const estimate = quick
+    ? null
+    : await estimateLead({ service, serviceName, location, images: aiImages, areaSqm, objektart, verschmutzung, turnus, besonderheiten, details });
 
   const lead: Lead = {
-    id, service, location, name, phone, email, startDate,
+    id, service, location: leadLocation, name: leadName, phone, email, startDate,
     createdAt: new Date().toISOString(),
-    areaSqm, objektart, verschmutzung, turnus, zeitfenster, firma, besonderheiten, details,
+    areaSqm, objektart, verschmutzung, turnus, zeitfenster, firma, besonderheiten: leadBesonderheiten, details,
     attribution: Object.keys(attribution).length ? attribution : null,
     sid,
     images: imagePaths,
@@ -113,8 +126,8 @@ export async function POST(req: Request) {
   }
 
   // Push-Benachrichtigung an den Betreiber (fire-and-forget, blockiert die Antwort nicht).
-  void sendLeadAlert({ name, phone });
+  void sendLeadAlert({ name: leadName, phone });
 
-  console.log("📥 Neuer Lead:", { id, service, name, images: imagePaths.length, estimateModel: estimate.model });
+  console.log("📥 Neuer Lead:", { id, service, name: leadName, quick, images: imagePaths.length, estimateModel: estimate?.model ?? "—" });
   return NextResponse.json({ ok: true, id, estimate });
 }
